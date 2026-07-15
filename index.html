@@ -258,7 +258,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 
 <script>
 // ============================================================
-// DATA LOADING — fetch from data/latest.json
+// DATA LOADING — fetch from latest.json
 // ============================================================
 let DATA = null;
 let MONTHS = [];
@@ -285,15 +285,15 @@ function getColor(name) {
 
 async function loadData() {
   try {
-    const resp = await fetch('data/latest.json');
+    const resp = await fetch('latest.json');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     DATA = await resp.json();
   } catch (e) {
-    console.error('Failed to load data/latest.json:', e);
+    console.error('Failed to load latest.json:', e);
     document.getElementById('loadingOverlay').innerHTML = `
       <div style="color:var(--red);font-size:14px;text-align:center;">
         <strong>数据加载失败</strong><br>
-        <span style="font-size:12px;color:var(--text-muted)">请确认 data/latest.json 文件存在。<br>运行 python3 scripts/fetch_data.py 生成数据。</span>
+        <span style="font-size:12px;color:var(--text-muted)">请确认 latest.json 文件存在。<br>运行 python3 scripts/fetch_data.py 生成数据。</span>
       </div>`;
     return;
   }
