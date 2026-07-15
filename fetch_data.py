@@ -22,7 +22,7 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
-DATA_DIR = PROJECT_DIR / "data"
+DATA_DIR = Path(__file__).parent
 
 # ============================================================
 # CITY REGISTRY — 70 cities from National Bureau of Statistics
