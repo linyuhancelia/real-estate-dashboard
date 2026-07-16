@@ -1,0 +1,1 @@
+{"name":"real-estate-dashboard","version":"5.0.0","private":true,"scripts":{"build":"mkdir -p public && cp index.html chart.min.js latest.json manifest.json sw.js icon-192.png public/ && mkdir -p public/data && cp data/latest.json public/data/"}}
