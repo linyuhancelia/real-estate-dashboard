@@ -2,1130 +2,469 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>房产趋势跟踪看板 v3.0 | Real Estate Trend Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>房产趋势看板</title>
+<script src="chart.min.js"></script>
 <style>
-:root {
-  --bg: #fafaf8;
-  --card-bg: #ffffff;
-  --text: #1a1a1a;
-  --text-secondary: #555;
-  --text-muted: #999;
-  --border: #e8e8e4;
-  --green: #2d8c4e;
-  --green-bg: #e8f5e9;
-  --red: #c0392b;
-  --red-bg: #fdecea;
-  --yellow: #e6a23c;
-  --yellow-bg: #fdf6ec;
-  --blue: #2980b9;
-  --blue-bg: #e3f2fd;
-  --hot: #e74c3c;
-  --warm: #e6a23c;
-  --cold: #3498db;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06);
-  --shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
-  --radius: 10px;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
-.dashboard { max-width: 1440px; margin: 0 auto; padding: 24px; }
-
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
-.header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-.header .subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-.header .date-badge { background: var(--text); color: var(--bg); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-family: var(--mono); }
-
-.section { margin-bottom: 36px; }
-.section-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-.section-title .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
-
-.insight {
-  background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-  border-left: 3px solid var(--blue);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  border-radius: 0 8px 8px 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-.insight strong { color: var(--text); }
-.insight .insight-tag {
-  display: inline-block;
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 8px;
-  font-weight: 600;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.tag-positive { background: var(--green-bg); color: var(--green); }
-.tag-neutral { background: var(--yellow-bg); color: var(--warm); }
-.tag-negative { background: var(--red-bg); color: var(--red); }
-.tag-info { background: var(--blue-bg); color: var(--blue); }
-
-.chart-box { background: var(--card-bg); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); border: 1px solid var(--border); }
-.chart-box canvas { max-height: 340px; }
-
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-
-.city-card {
-  background: var(--card-bg); border-radius: var(--radius); padding: 20px;
-  box-shadow: var(--shadow); border: 1px solid var(--border); transition: box-shadow 0.2s;
-}
-.city-card:hover { box-shadow: var(--shadow-hover); }
-.city-card.primary { border-left: 3px solid var(--red); }
-.city-card .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.city-card .city-name { font-size: 16px; font-weight: 700; }
-.city-card .card-type-label { font-size: 11px; color: var(--text-muted); }
-.city-card .highlight-tag { font-size: 10px; padding: 2px 6px; border-radius: 8px; background: var(--red-bg); color: var(--red); font-weight: 500; margin-left: 6px; }
-.temp-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-.temp-hot { background: #fde8e8; color: var(--hot); }
-.temp-warm { background: var(--yellow-bg); color: var(--warm); }
-.temp-cold { background: #e3f2fd; color: var(--cold); }
-
-.city-card .price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
-.city-card .price { font-size: 28px; font-weight: 700; font-family: var(--mono); letter-spacing: -1px; }
-.city-card .price-unit { font-size: 12px; color: var(--text-muted); }
-.city-card .extra-metrics { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-.city-card .em { font-size: 11px; color: var(--text-muted); }
-.city-card .em b { color: var(--text-secondary); font-weight: 600; }
-
-.city-card .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 16px; margin-bottom: 10px; }
-.city-card .metric { display: flex; justify-content: space-between; font-size: 12px; }
-.city-card .metric-label { color: var(--text-muted); }
-.metric-val-up { color: var(--green); font-weight: 600; font-family: var(--mono); }
-.metric-val-down { color: var(--red); font-weight: 600; font-family: var(--mono); }
-
-.city-card .rs-row { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; }
-.rs-label { color: var(--text-muted); }
-.rs-val { font-family: var(--mono); font-weight: 700; font-size: 20px; }
-.rs-desc { color: var(--text-muted); font-size: 11px; }
-.city-card .sparkline-container { height: 50px; margin-top: 6px; }
-.city-card .sparkline-container canvas { max-height: 50px; }
-
-.area-card {
-  background: var(--card-bg); border-radius: var(--radius); padding: 16px;
-  box-shadow: var(--shadow); border: 1px solid var(--border);
-}
-.area-card .ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.area-card .ac-name { font-size: 14px; font-weight: 700; }
-.area-card .ac-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
-.area-card .ac-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
-.area-card .am { text-align: center; padding: 6px 2px; background: var(--bg); border-radius: 6px; }
-.area-card .am-label { font-size: 9px; color: var(--text-muted); display: block; }
-.area-card .am-val { font-size: 14px; font-weight: 700; font-family: var(--mono); }
-.area-card .ac-chart { height: 110px; }
-.area-card .ac-chart canvas { max-height: 110px; }
-
-.hotzone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.hz-card {
-  background: var(--card-bg); border-radius: 8px; padding: 14px;
-  box-shadow: var(--shadow); border: 1px solid var(--border);
-}
-.hz-card .hz-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-.hz-card .hz-sub { font-size: 10px; color: var(--text-muted); margin-bottom: 8px; }
-.hz-card .hz-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
-.hz-card .hz-label { color: var(--text-muted); }
-.hz-card .hz-chart { height: 60px; margin-top: 6px; }
-.hz-card .hz-chart canvas { max-height: 60px; }
-
-.signal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.signal-card { background: var(--card-bg); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); }
-.signal-card .signal-name { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-.signal-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px; }
-.signal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.signal-on { background: var(--green); box-shadow: 0 0 6px rgba(45,140,78,0.4); }
-.signal-pending { background: var(--yellow); box-shadow: 0 0 6px rgba(230,162,60,0.3); }
-.signal-off { background: #ddd; }
-.signal-text { color: var(--text-secondary); }
-.signal-detail { font-size: 11px; color: var(--text-muted); padding-left: 18px; margin-bottom: 2px; }
-
-.rankings-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
-.ranking-table { background: var(--card-bg); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
-.ranking-table h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text-secondary); }
-.ranking-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.ranking-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 500; }
-.ranking-table td { padding: 7px 8px; border-bottom: 1px solid #f5f5f5; }
-.ranking-table tr:hover td { background: #fafaf8; }
-.rank-num { font-family: var(--mono); font-weight: 700; width: 20px; display: inline-block; }
-.rank-1 { color: #e6a23c; }
-.rank-2 { color: #909399; }
-.rank-3 { color: #b87333; }
-
-.vol-price-container { background: var(--card-bg); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
-.vol-price-container canvas { max-height: 260px; }
-
-.methodology { background: var(--card-bg); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
-.methodology h4 { font-size: 14px; color: var(--text); margin-bottom: 8px; }
-.meth-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 12px; }
-.meth-block { padding: 12px; background: var(--bg); border-radius: 6px; }
-.meth-block h5 { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
-.meth-block ul { list-style: none; padding: 0; }
-.meth-block li { font-size: 11px; padding: 2px 0; color: var(--text-muted); }
-.meth-block li::before { content: "·"; margin-right: 6px; font-weight: 700; }
-.data-source { margin-top: 16px; padding: 14px; background: #f5f5f0; border-radius: 6px; }
-.data-source h5 { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
-
-.footer { text-align: center; font-size: 11px; color: var(--text-muted); padding: 24px 0 12px; border-top: 1px solid var(--border); margin-top: 32px; }
-
-/* Legend box */
-.legend-box {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.legend-box .legend-title {
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 11px;
-  margin-right: 4px;
-}
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
-.legend-swatch {
-  display: inline-block;
-  width: 24px;
-  height: 12px;
-  border-radius: 4px;
-  vertical-align: middle;
-}
-
-/* Loading */
-.loading-overlay {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  flex-direction: column;
-  gap: 16px;
-}
-.loading-overlay .spinner {
-  width: 40px; height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 900px) {
-  .dashboard { padding: 12px; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .grid-auto { grid-template-columns: 1fr 1fr; }
-  .hotzone-grid { grid-template-columns: 1fr 1fr; }
-  .signal-grid { grid-template-columns: 1fr; }
-  .rankings-container { grid-template-columns: 1fr; }
-  .header { flex-direction: column; gap: 8px; }
-  .area-card .ac-metrics { grid-template-columns: repeat(2, 1fr); }
-  .meth-grid { grid-template-columns: 1fr; }
-  .legend-box { font-size: 10px; gap: 8px; }
-}
+:root{--bg:#f5f5f0;--card:#fff;--t:#1a1a1a;--t2:#555;--mu:#999;--bd:#e8e8e4;--g:#2d8c4e;--gbg:#e8f5e9;--r:#c0392b;--rbg:#fdecea;--y:#e6a23c;--ybg:#fdf6ec;--b:#2980b9;--bbg:#e3f2fd;--hot:#e74c3c;--warm:#e6a23c;--cold:#3498db;--sh:0 1px 3px rgba(0,0,0,.06);--sh2:0 4px 12px rgba(0,0,0,.1);--rd:10px;--f:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;--mo:"SF Mono","Menlo",monospace;--nh:52px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--f);background:var(--bg);color:var(--t);line-height:1.6}
+.D{max-width:1440px;margin:0 auto;padding:12px;padding-bottom:calc(var(--nh)+20px)}
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--bd)}
+.hdr h1{font-size:17px;font-weight:700}.hdr .sub{font-size:10px;color:var(--mu);margin-top:1px}
+.hdr .db{background:var(--t);color:var(--bg);padding:3px 10px;border-radius:16px;font-size:10px;font-family:var(--mo);white-space:nowrap}
+.fb{position:sticky;top:0;z-index:100;background:var(--bg);padding:8px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)}
+.fr{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.fb select,.fb input{padding:7px 6px;border:1px solid var(--bd);border-radius:8px;font-size:13px;background:var(--card);color:var(--t);font-family:var(--f);outline:none;flex:1;min-width:0}
+.fb select:focus,.fb input:focus{border-color:var(--b)}
+.fbtn{padding:7px 12px;border:none;border-radius:8px;font-size:13px;background:var(--b);color:#fff;cursor:pointer;white-space:nowrap;font-family:var(--f);font-weight:500}
+.fbtn:active{opacity:.8}
+.sb{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:12px;color:var(--t2);flex-wrap:wrap}
+.sn{font-size:15px;font-weight:700;color:var(--b)}
+.rb{font-size:11px;color:var(--b);background:var(--bbg);border:none;border-radius:12px;padding:2px 8px;cursor:pointer;font-family:var(--f)}
+.fc{font-size:11px;color:var(--mu);white-space:nowrap}
+.ttg{display:inline-flex;gap:3px;margin-left:auto}.ttg button{padding:3px 10px;border:1px solid var(--bd);border-radius:12px;font-size:11px;background:var(--card);cursor:pointer;font-family:var(--f);color:var(--mu)}.ttg button.act{background:var(--b);color:#fff;border-color:var(--b)}
+.S{margin-bottom:18px}.SH{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;user-select:none}
+.ST{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.stg{font-size:18px;color:var(--mu);transition:transform .2s}.stg.cl{transform:rotate(-90deg)}
+.SB{overflow:hidden;transition:max-height .3s ease}.SB.cl{max-height:0!important}
+.ins{background:linear-gradient(135deg,#f8f9fa,#fff);border-left:3px solid var(--b);padding:8px 10px;margin-bottom:10px;border-radius:0 8px 8px 0;font-size:11px;color:var(--t2);line-height:1.7}
+.ins strong{color:var(--t)}.it{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;margin-right:4px;vertical-align:middle}
+.tp{background:var(--gbg);color:var(--g)}.tn{background:var(--ybg);color:var(--warm)}.tng{background:var(--rbg);color:var(--r)}.ti{background:var(--bbg);color:var(--b)}
+.cb{background:var(--card);border-radius:var(--rd);padding:14px;box-shadow:var(--sh);border:1px solid var(--bd)}.cb canvas{max-height:260px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ga{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.cmg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.cm{background:var(--card);border-radius:8px;padding:8px 10px;cursor:pointer;box-shadow:var(--sh);border:2px solid transparent;transition:all .2s}
+.cm:hover{box-shadow:var(--sh2);border-color:var(--b)}.cm.act{border-color:var(--b);background:var(--bbg)}
+.cm .cmt{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}.cm .cmn{font-size:13px;font-weight:700}
+.cm .cmi{font-size:9px;color:var(--mu)}.cm .cmp{font-size:15px;font-weight:700;font-family:var(--mo);margin-bottom:1px}
+.cm .cmr{display:flex;justify-content:space-between;font-size:10px}
+.cm .cms{height:28px;margin-top:3px}.cm .cms canvas{max-height:28px}
+.tb{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.th{background:#fde8e8;color:var(--hot)}.tw{background:var(--ybg);color:var(--warm)}.tc{background:#e3f2fd;color:var(--cold)}
+.showMore{width:100%;padding:8px;border:1px dashed var(--bd);border-radius:8px;background:none;font-size:12px;color:var(--b);cursor:pointer;font-family:var(--f);margin-top:6px}
+.cp{background:var(--card);border-radius:var(--rd);padding:14px;box-shadow:var(--sh);border:1px solid var(--bd);border-left:3px solid var(--b);margin-bottom:12px}
+.cp .cptop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.cp .cpn{font-size:18px;font-weight:700}.cp .cpm{font-size:11px;color:var(--mu)}
+.cp .cppr{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.cp .cpp{font-size:28px;font-weight:700;font-family:var(--mo);letter-spacing:-1px}.cp .cpu{font-size:11px;color:var(--mu)}
+.cp .cpe{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;font-size:10px;color:var(--mu)}.cp .cpe b{color:var(--t2);font-weight:600}
+.cp .cpms{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.cp .cpm2{text-align:center;padding:6px 2px;background:var(--bg);border-radius:6px}
+.cp .cpl{font-size:9px;color:var(--mu);display:block}.cp .cpv{font-size:14px;font-weight:700;font-family:var(--mo)}
+.cp .cpb{display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--bd)}
+.cp .cps{display:flex;gap:10px;font-size:11px}
+.cp .cpr{text-align:right}.cp .cpr .rv{font-family:var(--mo);font-weight:700;font-size:22px}.cp .cpr .rd{font-size:10px;color:var(--mu)}
+.cp .cpch{height:80px;margin-top:6px}.cp .cpch canvas{max-height:80px}
+.ac{background:var(--card);border-radius:var(--rd);padding:10px;box-shadow:var(--sh);border:1px solid var(--bd)}
+.ac .ach{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}.ac .acn{font-size:12px;font-weight:700}
+.ac .acd{font-size:9px;color:var(--mu);margin-bottom:4px}
+.ac .acm{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:4px}
+.ac .am{text-align:center;padding:4px 2px;background:var(--bg);border-radius:6px}
+.ac .aml{font-size:8px;color:var(--mu);display:block}.ac .amv{font-size:12px;font-weight:700;font-family:var(--mo)}
+.ac .acc{height:80px}.ac .acc canvas{max-height:80px}
+.hzg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.hz{background:var(--card);border-radius:8px;padding:10px;box-shadow:var(--sh);border:1px solid var(--bd)}
+.hz .hzn{font-size:12px;font-weight:700;margin-bottom:1px}.hz .hzs{font-size:9px;color:var(--mu);margin-bottom:4px}
+.hz .hzr{display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px}.hz .hzl{color:var(--mu)}
+.hz .hzc{height:45px;margin-top:3px}.hz .hzc canvas{max-height:45px}
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.sc{background:var(--card);border-radius:var(--rd);padding:10px;box-shadow:var(--sh);border:1px solid var(--bd)}
+.sc .sn2{font-size:12px;font-weight:600;margin-bottom:4px}
+.sr{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11px}
+.sd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.so{background:var(--g);box-shadow:0 0 5px rgba(45,140,78,.4)}.sp{background:var(--y);box-shadow:0 0 5px rgba(230,162,60,.3)}.sf{background:#ddd}
+.st2{color:var(--t2)}.sdt{font-size:10px;color:var(--mu);padding-left:16px;margin-bottom:2px}
+.sleg{display:flex;gap:10px;font-size:10px;color:var(--mu);margin-bottom:8px;flex-wrap:wrap;padding:5px 8px;background:var(--bg);border-radius:6px}
+.sleg span{display:flex;align-items:center;gap:3px}
+.rkc{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.rkt{background:var(--card);border-radius:var(--rd);padding:12px;box-shadow:var(--sh);border:1px solid var(--bd);overflow-x:auto}
+.rkt h4{font-size:12px;font-weight:600;margin-bottom:6px;color:var(--t2)}
+.rkt table{width:100%;border-collapse:collapse;font-size:11px}
+.rkt th{text-align:left;padding:4px 5px;border-bottom:1px solid var(--bd);color:var(--mu);font-weight:500}
+.rkt td{padding:5px;border-bottom:1px solid #f5f5f5}.rkt tr.hl{background:var(--bbg)}
+.rn{font-family:var(--mo);font-weight:700;width:18px;display:inline-block}.r1{color:#e6a23c}.r2{color:#909399}.r3{color:#b87333}
+.vpc{background:var(--card);border-radius:var(--rd);padding:12px;box-shadow:var(--sh);border:1px solid var(--bd)}.vpc canvas{max-height:200px}
+.vu{color:var(--g);font-weight:600;font-family:var(--mo)}.vd{color:var(--r);font-weight:600;font-family:var(--mo)}
+.meth{background:var(--card);border-radius:var(--rd);padding:14px;box-shadow:var(--sh);border:1px solid var(--bd);font-size:12px;color:var(--t2);line-height:1.9}
+.meth h4{font-size:14px;color:var(--t);margin:10px 0 6px;font-weight:700}.meth h4:first-child{margin-top:0}
+.meth h5{font-size:12px;font-weight:600;margin:8px 0 4px;color:var(--t)}
+.meth .ex{background:var(--bg);padding:10px;border-radius:8px;margin:6px 0;font-size:11px}
+.meth .emo{font-size:14px;margin-right:4px}
+.foot{text-align:center;font-size:10px;color:var(--mu);padding:14px 0 8px;border-top:1px solid var(--bd);margin-top:20px}
+.bn{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--card);border-top:1px solid var(--bd);display:flex;justify-content:space-around;align-items:center;z-index:200;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.ni{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--mu);cursor:pointer;padding:4px 8px;border:none;background:none;font-family:var(--f)}.ni.at{color:var(--b)}.ni .nc{font-size:18px}
+.lo{display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:12px}
+.lo .spinner{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--b);border-radius:50%;animation:spin .8s linear infinite}
+.docP{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:300;display:none;flex-direction:column}
+.docP.show{display:flex}
+.docH{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd);background:var(--card)}
+.docX{width:32px;height:32px;border:none;background:var(--bg);border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2)}
+.docB{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(min-width:901px){.D{padding:20px}.hdr h1{font-size:20px}.bn{display:none}.D{padding-bottom:20px}.cmg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+@media(max-width:900px){.hdr{flex-direction:column;gap:4px;align-items:flex-start}.g2,.g3{grid-template-columns:1fr}.ga{grid-template-columns:1fr 1fr}.hzg{grid-template-columns:1fr 1fr}.sg,.rkc{grid-template-columns:1fr}.cmg{grid-template-columns:repeat(2,1fr)}.cb canvas{max-height:200px}.fb select,.fb input{font-size:14px;padding:8px}.cp .cpms{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:400px){.cmg{grid-template-columns:1fr 1fr;gap:5px}.cm{padding:6px 8px}.cm .cmp{font-size:13px}.hzg,.ga{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="dashboard" id="app">
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div style="color:var(--text-muted);font-size:13px;">正在加载数据...</div>
-  </div>
+<div class="D" id="app"><div class="lo" id="ldO"><div class="spinner"></div><div style="color:var(--mu);font-size:13px">正在加载数据...</div></div></div>
+<nav class="bn" id="bN" style="display:none">
+  <button class="ni at" onclick="nv('s-ov',this)"><span class="nc">📈</span>走势</button>
+  <button class="ni" onclick="nv('s-ct',this)"><span class="nc">🏙️</span>城市</button>
+  <button class="ni" onclick="nv('s-pt',this)"><span class="nc">🏢</span>物业</button>
+  <button class="ni" onclick="nv('s-sg',this)"><span class="nc">🚦</span>信号</button>
+  <button class="ni" onclick="nv('s-rk',this)"><span class="nc">🏆</span>排行</button>
+  <button class="ni" onclick="togDoc()"><span class="nc">📖</span>说明</button>
+</nav>
+<div class="docP" id="docPanel">
+  <div class="docH"><span style="font-size:16px;font-weight:700">📖 指标说明</span><button class="docX" onclick="togDoc()">✕</button></div>
+  <div class="docB" id="docBody"></div>
+</div>
+<script>
+if(typeof Chart==='undefined'){document.getElementById('ldO').innerHTML='<div style="color:red;text-align:center"><b>图表库加载失败</b><br><small>请刷新页面重试</small></div>';throw new Error('no Chart')}
+function nv(id,b){const e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('.ni').forEach(n=>n.classList.remove('at'));if(b)b.classList.add('at');const dp=document.getElementById('docPanel');if(dp)dp.classList.remove('show')}
+function togDoc(){const dp=document.getElementById('docPanel');dp.classList.toggle('show');document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('at',false))}
+function tog(id){const b=document.getElementById(id),t=b.previousElementSibling.querySelector('.stg');b.classList.toggle('cl');t.classList.toggle('cl')}
+
+let D=null,MO=[],MOF=[],NAT={},AC={},APS=[];
+let selCity='上海',fProv='',fTier='',fSch='',showAllCities=false,TP=12;
+const CI={};function dCI(k){if(CI[k]){CI[k].destroy();delete CI[k]}}function dCIP(p){Object.keys(CI).forEach(k=>{if(k.startsWith(p)){CI[k].destroy();delete CI[k]}})}
+const CC=['#e74c3c','#c0392b','#8e44ad','#2980b9','#e67e22','#1abc9c','#34495e','#9b59b6','#d4a017','#16a085','#27ae60','#00bcd4','#607d8b','#ff5722','#4caf50','#795548','#ff9800','#009688','#673ab7','#03a9f4'];
+let ci=0;function gC(n){if(n==='上海')return'#e74c3c';if(n==='香港')return'#d4a017';return CC[(ci++)%CC.length]}
+
+async function loadData(){
+  const el=document.getElementById('ldO');
+  try{const r=await fetch('latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
+  catch(e1){try{const r=await fetch('data/latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}catch(e2){el.innerHTML=`<div style="color:var(--r);text-align:center"><b>数据加载失败</b><br><small>${e1.message}</small></div>`;return}}
+  MOF=D.meta.months;MO=MOF.map(m=>m.slice(2));NAT=D.national;ci=0;
+  for(const[n,c]of Object.entries(D.cities))AC[n]={...c,color:gC(n)};
+  APS=Object.values(AC).map(c=>c.prices);
+  renderAll();document.getElementById('bN').style.display='flex';
+}
+
+// ===== ALGORITHMS =====
+function cC(p,n){const l=p.length,i=l-1-n;return i<0?0:((p[l-1]-p[i])/p[i])*100}
+function cSl(p,s,e){return(e<=s||s<0)?0:(p[e]-p[s])/p[s]*100/(e-s)}
+function cMo(p){const n=p.length;return n<7?0:cSl(p,n-4,n-1)-cSl(p,n-7,n-4)}
+function cTp(p,v){const n=p.length,pm=Math.max(0,Math.min(100,50+cC(p,3)*15));const rv=v.slice(-3).reduce((a,b)=>a+b,0)/3,ps=v.slice(-9,-3);const pv=ps.length?ps.reduce((a,b)=>a+b,0)/ps.length:rv;const vm=Math.max(0,Math.min(100,(pv>0?rv/pv:1)*50));let c=0;const ld=p[n-1]>=p[n-2]?1:-1;for(let i=n-1;i>0;i--){if((p[i]>=p[i-1]?1:-1)===ld)c++;else break}const pe=Math.max(0,Math.min(100,c*12+(ld>0?20:0)));const s=pm*.4+vm*.3+pe*.3;if(s>65)return{s:Math.round(s),l:'热',c:'th'};if(s>35)return{s:Math.round(s),l:'平',c:'tw'};return{s:Math.round(s),l:'寒',c:'tc'}}
+function cRS(p,all){const pds=[{m:1,w:.4},{m:3,w:.35},{m:12,w:.25}];let wp=0;pds.forEach(({m,w})=>{const mc=cC(p,Math.min(m,p.length-1)),nc=cC(NAT.prices,Math.min(m,NAT.prices.length-1)),ex=mc-nc;const ae=all.map(q=>cC(q,Math.min(m,q.length-1))-nc).sort((a,b)=>a-b);wp+=(ae.filter(e=>e<=ex).length/ae.length)*100*w});return Math.round(wp)}
+
+// FIX: Signals are now strictly progressive
+function dSg(p,v){
+  const n=p.length,s={sd:0,st:0,rc:0},d={sd:'',st:'',rc:''};
+  // Step1: 止跌 — decline narrowing
+  if(n>=4){
+    const c1=(p[n-3]-p[n-4])/p[n-4]*100,c2=(p[n-2]-p[n-3])/p[n-3]*100,c3=(p[n-1]-p[n-2])/p[n-2]*100;
+    if(c3>c2&&c2>c1){s.sd=1;d.sd=`跌幅连续收窄: ${c1.toFixed(2)}%→${c2.toFixed(2)}%→${c3.toFixed(2)}%`}
+    else if(c3>c2){d.sd=`部分收窄: ${c2.toFixed(2)}%→${c3.toFixed(2)}%`}
+    else{d.sd=`未收窄: ${c2.toFixed(2)}%→${c3.toFixed(2)}%`}
+  }
+  // Step2: 走平 — only if 止跌 passed
+  if(n>=2){
+    const lc=Math.abs((p[n-1]-p[n-2])/p[n-2]*100);
+    const av=v.slice(-7,-1).reduce((a,b)=>a+b,0)/Math.max(1,v.slice(-7,-1).length),lv=v[n-1];
+    if(s.sd && lc<=.3 && lv>=av*.8){s.st=1;d.st=`波动仅${lc.toFixed(2)}%, 量维持${(lv/av*100).toFixed(0)}%`}
+    else{d.st=`波动${lc.toFixed(2)}%${lc>.3?'(>0.3%)':''}, 量${(lv/(av||1)*100).toFixed(0)}%${!s.sd?' [需先止跌]':''}`}
+  }
+  // Step3: 回升 — only if 走平 passed
+  if(n>=3){
+    const cl=(p[n-1]-p[n-2])/p[n-2]*100,cp2=(p[n-2]-p[n-3])/p[n-3]*100;
+    const av=v.slice(-7,-1).reduce((a,b)=>a+b,0)/Math.max(1,v.slice(-7,-1).length),ma=p.slice(-5).reduce((a,b)=>a+b,0)/5;
+    if(s.st && cl>0 && cp2>0 && v[n-1]>av && p[n-1]>ma){s.rc=1;d.rc=`连涨2月 ${cp2.toFixed(2)}%/${cl.toFixed(2)}%, 量价齐升`}
+    else{const r=[];if(!s.st)r.push('需先走平');if(cl<=0||cp2<=0)r.push('未连续正涨');if(v[n-1]<=av)r.push('量不足');if(p[n-1]<=ma)r.push('价<MA5');d.rc=r.join('·')}
+  }
+  return{s,d}
+}
+
+function fc(v){return`${v>=0?'+':''}${v.toFixed(1)}%`}
+function fc2(v){return`${v>=0?'+':''}${v.toFixed(2)}%`}
+function vc(v){return v>=.05?'vu':v<=-.05?'vd':'vu'}
+function tS(arr){return TP>=arr.length?arr:arr.slice(-(TP+1))}
+function tMO(){return TP>=MOF.length?MO:MO.slice(-(TP+1))}
+function maxTk(){return TP<=6?7:TP<=12?12:14}
+
+// FIX: Top1 only from 一线/新一线/二线 (filter out tiny cities with noise)
+function getTop1(){
+  const tiers=['一线','新一线','二线'];
+  return Object.entries(AC).filter(([n,d])=>n!=='上海'&&tiers.includes(d.tier))
+    .map(([n,d])=>({n,mc:Math.abs(cMo(d.prices)),raw:cMo(d.prices),...d}))
+    .sort((a,b)=>b.mc-a.mc)[0]
+}
+
+// ===== FILTER =====
+function getF(){return Object.entries(AC).filter(([n,c])=>{if(fProv&&c.province!==fProv)return false;if(fTier&&c.tier!==fTier)return false;if(fSch&&!n.includes(fSch))return false;return true})}
+function onF(){
+  fProv=document.getElementById('fP').value;fTier=document.getElementById('fT').value;fSch=document.getElementById('fS').value;
+  const sel=document.getElementById('fC');sel.innerHTML='<option value="">选择城市</option>';
+  let cities=Object.entries(AC);
+  if(fProv)cities=cities.filter(([,c])=>c.province===fProv);
+  if(fTier)cities=cities.filter(([,c])=>c.tier===fTier);
+  cities.forEach(([n])=>{sel.innerHTML+=`<option value="${n}">${n}</option>`});
+  showAllCities=!!(fProv||fTier||fSch);
+  document.getElementById('fCt').textContent=`${getF().length}城`;rMG()}
+function onCD(){const v=document.getElementById('fC').value;if(v&&AC[v]){selCity=v;doSel()}}
+function onSch(){
+  fSch=document.getElementById('fS').value;showAllCities=true;const f=getF();
+  document.getElementById('fCt').textContent=`${f.length}城`;
+  if(fSch){const x=f.find(([n])=>n===fSch);if(x)selCity=x[0];else if(f.length)selCity=f[0][0]}
+  doSel()}
+function doSel(){
+  const b=document.getElementById('scN');if(b)b.textContent=selCity;
+  const r=document.getElementById('rB');if(r)r.style.display=selCity==='上海'?'none':'inline';
+  document.querySelectorAll('.cm').forEach(e=>e.classList.toggle('act',e.dataset.city===selCity));
+  rPf();rPT();rHZ();rAR();rSG();rRK();rVP();
+  const p=document.getElementById('s-pf');if(p)setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'start'}),100)}
+function selCi(n){if(!AC[n])return;selCity=n;doSel()}
+function resetC(){selCity='上海';fProv='';fTier='';fSch='';showAllCities=false;
+  document.getElementById('fP').value='';document.getElementById('fT').value='';document.getElementById('fS').value='';
+  const sel=document.getElementById('fC');sel.innerHTML='<option value="">选择城市</option>';Object.keys(AC).forEach(n=>{sel.innerHTML+=`<option value="${n}">${n}</option>`});
+  document.getElementById('fCt').textContent=`${Object.keys(AC).length}城`;rMG();doSel()}
+function setTP(n){TP=n;document.querySelectorAll('.ttg button').forEach(b=>b.classList.toggle('act',parseInt(b.dataset.m)===n));rOV();rMG();rPf();rPT();rHZ();rAR();rVP()}
+
+// ===== RENDER ALL =====
+function renderAll(){
+  const tc=Object.keys(AC).length,today=new Date().toISOString().slice(0,10);
+  const ds=D.meta.data_source==='anjuke-crawl'?'安居客真实数据':D.meta.data_source==='real'?'真实数据':'模型模拟';
+  const provs=D.meta.provinces,tiers=D.meta.tiers;
+  document.getElementById('app').innerHTML=`
+  <div class="hdr"><div><h1>🏠 房产趋势看板</h1><div class="sub">全国${tc}城·量化视角·${ds}·每日更新</div></div><div class="db">${today}</div></div>
+  <div class="fb"><div class="fr">
+    <select id="fP" onchange="onF()"><option value="">全部省份</option>${provs.map(p=>`<option value="${p}">${p}</option>`).join('')}</select>
+    <select id="fT" onchange="onF()"><option value="">城市类别</option>${tiers.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+    <select id="fC" onchange="onCD()"><option value="">选择城市</option>${Object.keys(AC).map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
+    <input id="fS" type="text" placeholder="🔍搜索城市" oninput="onF()" onkeydown="if(event.key==='Enter')onSch()">
+    <button class="fbtn" onclick="onSch()">搜索</button><span class="fc" id="fCt">${tc}城</span>
+  </div><div class="sb"><span>当前查看：</span><span class="sn" id="scN">上海</span><button class="rb" id="rB" style="display:none" onclick="resetC()">重置为上海</button>
+    <div class="ttg"><button data-m="6" onclick="setTP(6)">6月</button><button class="act" data-m="12" onclick="setTP(12)">1年</button><button data-m="24" onclick="setTP(24)">2年</button></div>
+  </div></div>
+
+  <div class="S" id="s-ov"><div class="SH" onclick="tog('bm1')"><div class="ST">📈 全国走势·上海 vs 大盘 + Top1异动</div><span class="stg">▾</span></div>
+    <div class="SB" id="bm1"><div class="ins" id="iM1"></div><div class="cb"><canvas id="ovC"></canvas></div></div></div>
+
+  <div class="S" id="s-ct"><div class="SH" onclick="tog('bm2')"><div class="ST">🏙️ 城市列表·点击选择</div><span class="stg">▾</span></div>
+    <div class="SB" id="bm2"><div class="ins" id="iM2"></div><div class="cmg" id="cMG"></div><div id="smB"></div></div></div>
+
+  <div class="S" id="s-pf"><div class="SH" onclick="tog('bpf')"><div class="ST" id="pfT">🔍 城市详情·上海</div><span class="stg">▾</span></div><div class="SB" id="bpf"><div id="pfC"></div></div></div>
+
+  <div class="S" id="s-pt"><div class="SH" onclick="tog('bm3')"><div class="ST" id="m3T">🏢 物业类型</div><span class="stg">▾</span></div><div class="SB" id="bm3"><div class="ins" id="iM3"></div><div class="ga" id="ptC"></div></div></div>
+
+  <div class="S" id="s-hz"><div class="SH" onclick="tog('bm4')"><div class="ST" id="m4T">🔥 热门板块</div><span class="stg">▾</span></div><div class="SB" id="bm4"><div class="ins" id="iM4"></div><div class="hzg" id="hzC"></div></div></div>
+
+  <div class="S" id="s-ar"><div class="SH" onclick="tog('bm5')"><div class="ST" id="m5T">🎯 环线/区域</div><span class="stg">▾</span></div><div class="SB" id="bm5"><div class="ins" id="iM5"></div><div class="ga" id="arC"></div></div></div>
+
+  <div class="S" id="s-sg"><div class="SH" onclick="tog('bm6')"><div class="ST" id="m6T">🚦 止跌回升信号</div><span class="stg">▾</span></div><div class="SB" id="bm6"><div class="ins" id="iM6"></div><div class="sleg"><span><span class="sd so" style="display:inline-block;width:8px;height:8px"></span> 已达成</span><span><span class="sd sp" style="display:inline-block;width:8px;height:8px"></span> 前置已达成，本步待确认</span><span><span class="sd sf" style="display:inline-block;width:8px;height:8px"></span> 未到达</span><span style="color:var(--t2)">⚠️ 严格递进：止跌→走平→回升，必须前一步亮绿，后一步才能亮</span></div><div class="sg" id="sgC"></div></div></div>
+
+  <div class="S" id="s-rk"><div class="SH" onclick="tog('bm7')"><div class="ST">🏆 核心指标排行</div><span class="stg">▾</span></div><div class="SB" id="bm7"><div class="ins" id="iM7"></div><div class="rkc" id="rkC"></div></div></div>
+
+  <div class="S" id="s-vp"><div class="SH" onclick="tog('bm8')"><div class="ST" id="m8T">📊 量价关系</div><span class="stg">▾</span></div><div class="SB" id="bm8"><div class="ins" id="iM8"></div><div class="g3" id="vpG"></div></div></div>
+
+  <div class="foot">房产趋势看板 v5.0 · 全国${tc}城 · 价格数据来源安居客 · 不构成投资建议</div>`;
+  // Populate doc panel
+  document.getElementById('docBody').innerHTML=`<div class="meth">
+<h4>📡 数据来源与更新</h4>
+<div class="ex">
+<b>当前数据来源</b>：安居客(anjuke.com)二手房挂牌均价<b>（真实爬取）</b>，覆盖全国124个城市。区域均价同样来自安居客行政区数据。<br><br>
+<b>⚠️ 数据说明</b>：价格数据为安居客平台二手房挂牌均价（非成交价），成交量为基于价格趋势的估算模型。物业类型拆分基于城市均价的结构化模型。<br><br>
+<b>更新频率</b>：每日自动更新（北京时间16:00），通过GitHub Actions定时任务触发数据刷新并自动部署。
 </div>
 
-<script>
-// ============================================================
-// DATA LOADING — fetch from latest.json
-// ============================================================
-let DATA = null;
-let MONTHS = [];
-let MONTHS_FULL = [];
-let NATIONAL = {};
-let ALL_CITIES = {};
-let PROPERTY_TYPES = {};
-let AREA_RINGS = {};
-let HOT_ZONES = {};
+<h4>🌡️ 趋势温度 —— 这个城市的市场热不热？</h4>
+<div class="ex"><span class="emo">🔴</span><b>热 (>65分)</b>：房价在涨，买房的人多 → 卖方市场<br><span class="emo">🟡</span><b>平 (35-65分)</b>：房价横盘，买卖僵持 → 可以慢慢选<br><span class="emo">🔵</span><b>寒 (<35分)</b>：房价在跌，观望情绪重 → 买方市场</div>
+<h5>怎么算的？三个因素加权打分：</h5>
+<div class="ex">① 房价最近3个月涨跌幅（占40%）<br>② 成交量相比之前是多了还是少了（占30%）<br>③ 涨跌是否有持续性——连续3月比1月得分高（占30%）</div>
 
-const CITY_COLORS = [
-  '#e74c3c','#c0392b','#8e44ad','#2980b9','#e67e22','#1abc9c','#34495e','#9b59b6',
-  '#d4a017','#16a085','#27ae60','#00bcd4','#607d8b','#ff5722','#4caf50','#795548',
-  '#ff9800','#009688','#673ab7','#03a9f4','#3f51b5','#8bc34a','#00acc1','#ffc107',
-  '#546e7a','#5d4037','#e91e63','#2196f3','#ff6e40','#78909c','#ab47bc','#26a69a',
-];
-let colorIdx = 0;
-function getColor(name) {
-  if (name === '上海') return '#e74c3c';
-  if (name === '昆山') return '#e91e63';
-  if (name === '香港') return '#d4a017';
-  return CITY_COLORS[(colorIdx++) % CITY_COLORS.length];
+<h4>💪 相对强度 RS —— 这个城市比别人强吗？</h4>
+<p>类似考试排名。<b>RS=80</b> 意味着跑赢了80%的其他城市。</p>
+<div class="ex">RS > 60：相对坚挺，比多数城市抗跌<br>RS 40-60：表现中等<br>RS < 40：比多数城市弱，还在调整</div>
+
+<h4>🚦 止跌回升信号 —— 市场到底了吗？</h4>
+<p>像交通灯，分三步依次判断。<b>严格递进</b>：必须前一步达成，后一步才有可能亮灯。</p>
+<div class="ex">
+<b>第1步 止跌（绿=跌幅连续收窄）</b><br>
+<i>比如：上月跌1%→这月跌0.5%→下月跌0.2%，虽然还在跌但越来越慢</i><br>
+判断条件：连续3个月，每月跌幅都比上月小<br><br>
+<b>第2步 走平（绿=基本不跌了）</b> ← 必须先通过止跌<br>
+<i>月波动在±0.3%以内 + 成交量≥过去半年均值的80%</i><br>
+如果止跌没亮，走平不可能亮。即使波动很小，也会标注"需先止跌"<br><br>
+<b>第3步 回升（绿=真的开始涨了）</b> ← 必须先通过走平<br>
+<i>连续2个月正涨 + 成交量超过半年均值 + 价格站上5月均线</i><br>
+如果走平没亮，回升不可能亮
+</div>
+<div class="ex">
+<b>灯的颜色含义：</b><br>
+🟢 <b>绿灯</b> = 该步骤条件<b>已达成</b><br>
+🟡 <b>黄灯</b> = 前置步骤已达成，该步骤<b>待确认</b>（条件还没完全满足）<br>
+⚪ <b>灰灯</b> = <b>未到达</b>该阶段（前置步骤都没通过）
+</div>
+
+<h4>⚡ Top1异动城市 —— 为什么选这个城市？</h4>
+<div class="ex">
+<b>异动 = 动量变化最大</b>，衡量的是"加速度"而非"速度"。<br><br>
+计算方式：最近3个月的价格斜率 减去 前3个月的价格斜率<br>
+<i>例如：A城前3月每月跌1%，最近3月每月只跌0.2% → 动量变化=+0.8pp，说明市场在好转</i><br>
+<i>B城前3月每月涨0.5%，最近3月每月跌0.3% → 动量变化=-0.8pp，说明市场在转弱</i><br><br>
+取绝对值最大的城市展示，方向可正可负。仅从一线/新一线/二线中选取，避免三线小城因数据波动产生误导。
+</div>
+
+<h4>📊 量价关系 —— 怎么判断涨跌是真是假？</h4>
+<p><b>核心口诀：量在价先</b>——成交量是房价的领先指标，真正的趋势转变，一定先从"量"上看到变化。</p>
+<div class="ex">
+<b>怎么看柱子颜色？</b><br>
+<span style="color:var(--g)">■ 绿色柱</span> = 当月价格上涨 &nbsp; <span style="color:var(--r)">■ 红色柱</span> = 当月价格下跌<br><br>
+<b>6种量价组合及含义：</b><br>
+✅ <b>量价齐升</b>（量↑价↑）：最健康的信号。涨价有真实买盘支撑，上涨可持续<br>
+⚠️ <b>放量下跌</b>（量↑价↓）：抛压释放/恐慌出逃，市场还没到底，需谨慎<br>
+⚠️ <b>缩量上涨</b>（量↓价↑）：<b>典型量价背离</b>！看似在涨，但买的人越来越少 → 虚涨，随时可能回调<br>
+🔻 <b>缩量阴跌</b>（量↓价↓）：有价无市，但抛压也在减小，跌幅可能放缓<br>
+👀 <b>放量横盘</b>（量↑价平）：买卖双方激烈博弈，变盘前兆，关注方向<br>
+😴 <b>缩量横盘</b>（量↓价平）：市场冷淡，买卖双方都在等信号
+</div>
+<div class="ex">
+<b>实操技巧</b>：如果你看到某个板块出现"量价齐升"信号，<b>同时</b>止跌信号已亮绿 + RS>60，那基本可以判断这个板块已经进入回暖通道。反过来，"缩量上涨"+"止跌未亮"= 大概率是假信号。
+</div>
+
+<h4>📊 其他指标速查</h4>
+<div class="ex"><b>租售比</b>：年租金÷房价。2%=50年回本。<b>越高=租金回报越好</b><br><b>去化周期</b>：卖完库存需几个月。<b><12月=卖方市场</b>，<b>>18月=买方市场</b><br><b>溢价率</b>：成交价÷挂牌价。95%=打了95折。<b>越高=市场越好</b><br><b>带看指数</b>：中介带看活跃度。<b>越高=想买房的人越多</b></div>
+</div>`;
+  rOV();document.getElementById('iM2').innerHTML=`<span class="it ti">提示</span>默认展示一线/新一线城市。选择<b>省份</b>或<b>城市类别</b>查看更多，点击卡片→所有模块更新。右上角<b>6月/1年/2年</b>切换所有图表时间。`;
+  rMG();rPf();rPT();rHZ();rAR();rSG();rRK();rVP();
 }
 
-async function loadData() {
-  try {
-    const resp = await fetch('latest.json');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    DATA = await resp.json();
-  } catch (e) {
-    console.error('Failed to load latest.json:', e);
-    document.getElementById('loadingOverlay').innerHTML = `
-      <div style="color:var(--red);font-size:14px;text-align:center;">
-        <strong>数据加载失败</strong><br>
-        <span style="font-size:12px;color:var(--text-muted)">请确认 latest.json 文件存在。<br>运行 python3 scripts/fetch_data.py 生成数据。</span>
-      </div>`;
-    return;
-  }
+// M1
+function rOV(){dCI('ov');const sh=AC['上海'],t1=getTop1();const nyc=cC(NAT.prices,12),syc=cC(sh.prices,12);
+  const el=document.getElementById('iM1');
+  if(el)el.innerHTML=`<span class="it ${syc>nyc?'tp':'tng'}">大盘</span><b>全国</b>${fc(nyc)}，<b>上海</b>${fc(syc)}，${syc>nyc?'跑赢':'跑输'}${Math.abs(syc-nyc).toFixed(1)}pp。Top1异动：<b>${t1.n}</b>(动量${fc2(t1.raw)})，${t1.raw>0?'市场在好转':'市场在转弱'}。`;
+  const cv=document.getElementById('ovC');if(!cv)return;
+  const mo=tMO(),sp=tS(sh.prices),np=tS(NAT.prices),tp=tS(t1.prices);
+  const nb=np[0],sb=sp[0],tb=tp[0];
+  CI['ov']=new Chart(cv.getContext('2d'),{type:'line',data:{labels:mo,datasets:[
+    {label:'全国大盘',data:np.map(p=>((p-nb)/nb*100).toFixed(2)),borderColor:'#333',borderWidth:2,borderDash:[6,3],pointRadius:0,tension:.3,fill:false},
+    {label:'上海',data:sp.map(p=>((p-sb)/sb*100).toFixed(2)),borderColor:'#e74c3c',borderWidth:3,pointRadius:0,tension:.3,fill:false},
+    {label:`${t1.n}★`,data:tp.map(p=>((p-tb)/tb*100).toFixed(2)),borderColor:t1.color,borderWidth:2,pointRadius:0,tension:.3,fill:false},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},
+    plugins:{legend:{position:'top',labels:{usePointStyle:true,pointStyle:'circle',padding:8,font:{size:10}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y>0?'+':''}${c.parsed.y}%`}}},
+    scales:{y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{family:'monospace',size:9}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:9},maxTicksLimit:maxTk(),maxRotation:45},grid:{display:false}}}}})}
 
-  MONTHS_FULL = DATA.meta.months;
-  MONTHS = MONTHS_FULL.map(m => m.slice(2));
-  NATIONAL = DATA.national;
+// M2: City Grid
+function rMG(){const g=document.getElementById('cMG'),sm=document.getElementById('smB');if(!g)return;dCIP('ms-');g.innerHTML='';
+  let list=getF();const topTiers=['一线','新一线'];
+  if(!showAllCities&&!fProv&&!fTier&&!fSch){list=list.filter(([,c])=>topTiers.includes(c.tier))}
+  list.forEach(([n,d])=>{const lp=d.prices[d.prices.length-1],yc=cC(d.prices,12),t=cTp(d.prices,d.volumes),sid=`ms-${n}`;
+    const c=document.createElement('div');c.className='cm'+(n===selCity?' act':'');c.dataset.city=n;c.onclick=()=>selCi(n);
+    c.innerHTML=`<div class="cmt"><span class="cmn">${n}</span><span class="tb ${t.c}">${t.l}</span></div><div class="cmi">${d.tier}·${d.province}</div><div class="cmp">${lp.toLocaleString()}</div><div class="cmr"><span style="color:var(--mu)">近1年</span><span class="${vc(yc)}">${fc(yc)}</span></div><div class="cms"><canvas id="${sid}"></canvas></div>`;
+    g.appendChild(c);
+    const sp=tS(d.prices),sl=tMO();
+    setTimeout(()=>{const cv=document.getElementById(sid);if(!cv)return;CI[sid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{data:sp,borderColor:d.color,borderWidth:1.2,pointRadius:0,tension:.3,fill:{target:'origin',above:d.color+'10'}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}})},30)});
+  if(sm){const total=getF().length;if(!showAllCities&&!fProv&&!fTier&&!fSch&&total>list.length){sm.innerHTML=`<button class="showMore" onclick="showAllCities=true;rMG()">展开全部 ${total} 城 ▾</button>`}else{sm.innerHTML=''}}}
 
-  colorIdx = 0;
-  for (const [name, city] of Object.entries(DATA.cities)) {
-    ALL_CITIES[name] = { ...city, color: getColor(name) };
-  }
-  for (const [name, pt] of Object.entries(DATA.shanghai_property_types)) {
-    const colors = {'老破小':'#e67e22','次新房':'#27ae60','改善大平层':'#2980b9','远郊新房':'#7f8c8d'};
-    PROPERTY_TYPES[name] = { ...pt, color: colors[name] || '#999' };
-  }
-  for (const [name, ar] of Object.entries(DATA.shanghai_area_rings)) {
-    const colors = {'市中心':'#c0392b','内环内':'#e74c3c','内中环':'#e67e22','中外环':'#f39c12','外环外':'#95a5a6'};
-    AREA_RINGS[name] = { ...ar, color: colors[name] || '#999' };
-  }
-  for (const [name, hz] of Object.entries(DATA.shanghai_hot_zones)) {
-    const colors = {'前滩':'#c0392b','徐汇滨江':'#8e44ad','陆家嘴':'#2c3e50','大虹桥':'#27ae60','张江':'#2980b9','新天地':'#e74c3c'};
-    HOT_ZONES[name] = { ...hz, color: colors[name] || '#999' };
-  }
+// Profile — FIX: use % change chart instead of absolute price for better visibility
+function rPf(){dCI('pf');const c=document.getElementById('pfC'),t=document.getElementById('pfT');if(!c)return;const d=AC[selCity];if(!d)return;if(t)t.innerHTML=`🔍 城市详情·${selCity}`;
+  const lp=d.prices[d.prices.length-1],wc=cC(d.prices,1)/4,mc=cC(d.prices,1),m3=cC(d.prices,3),yc=cC(d.prices,12);
+  const tp=cTp(d.prices,d.volumes),rs=cRS(d.prices,APS),{s:sg}=dSg(d.prices,d.volumes);
+  c.innerHTML=`<div class="cp"><div class="cptop"><div><div class="cpn">${selCity}</div><div class="cpm">${d.tier}·${d.province}</div></div><span class="tb ${tp.c}" style="font-size:12px;padding:3px 10px">${tp.l} ${tp.s}</span></div>
+    <div class="cppr"><span class="cpp">${lp.toLocaleString()}</span><span class="cpu">元/㎡</span></div>
+    <div class="cpe"><span>租售比 <b>${d.rentYield}%</b></span><span>去化 <b>${d.monthsOfSupply}月</b></span><span>溢价率 <b>${(d.premiumRate*100).toFixed(0)}%</b></span><span>带看 <b>${d.showingIndex}</b></span></div>
+    <div class="cpms"><div class="cpm2"><span class="cpl">近1周</span><span class="cpv ${vc(wc)}">${fc(wc)}</span></div><div class="cpm2"><span class="cpl">近1月</span><span class="cpv ${vc(mc)}">${fc(mc)}</span></div><div class="cpm2"><span class="cpl">近3月</span><span class="cpv ${vc(m3)}">${fc(m3)}</span></div><div class="cpm2"><span class="cpl">近1年</span><span class="cpv ${vc(yc)}">${fc(yc)}</span></div></div>
+    <div class="cpb"><div class="cps"><span>止跌 <span class="sd ${sg.sd?'so':'sf'}" style="display:inline-block;width:8px;height:8px;vertical-align:middle"></span></span><span>走平 <span class="sd ${sg.st?'so':sg.sd?'sp':'sf'}" style="display:inline-block;width:8px;height:8px;vertical-align:middle"></span></span><span>回升 <span class="sd ${sg.rc?'so':sg.st?'sp':'sf'}" style="display:inline-block;width:8px;height:8px;vertical-align:middle"></span></span></div>
+    <div class="cpr"><div class="rv" style="color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</div><div class="rd">RS·跑赢${rs}%</div></div></div>
+    <div class="cpch"><canvas id="pfSp"></canvas></div></div>`;
+  const sp=tS(d.prices),sl=tMO(),np=tS(NAT.prices),sb=sp[0],nb=np[0];
+  setTimeout(()=>{const cv=document.getElementById('pfSp');if(!cv)return;
+    CI['pf']=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[
+      {label:selCity,data:sp.map(p=>((p-sb)/sb*100).toFixed(2)),borderColor:d.color,borderWidth:2.5,pointRadius:1,tension:.3,fill:{target:'origin',above:d.color+'15',below:'rgba(192,57,43,.08)'}},
+      {label:'全国',data:np.map(p=>((p-nb)/nb*100).toFixed(2)),borderColor:'#aaa',borderWidth:1.5,borderDash:[4,2],pointRadius:0,tension:.3,fill:false}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,pointStyle:'line',padding:6,font:{size:9}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y>0?'+':''}${c.parsed.y}%`}}},
+      scales:{x:{ticks:{font:{size:8},maxTicksLimit:maxTk()}},y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{family:'monospace',size:8}},grid:{color:'#f5f5f5'}}}}})},50)}
 
-  renderDashboard();
+const ptC2={'老破小':'#e67e22','次新房':'#27ae60','改善大平层':'#2980b9','别墅':'#8e44ad','远郊新房':'#7f8c8d'};
+function rPT(){dCIP('pt-');const c=document.getElementById('ptC'),t=document.getElementById('m3T'),ins=document.getElementById('iM3');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d||!d.property_types)return;if(t)t.innerHTML=`🏢 ${selCity}·物业类型`;
+  const pt=d.property_types,cp=d.prices,entries=Object.entries(pt);
+  const best=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return r>b.rs?{n,rs:r}:b},{n:'',rs:0});
+  if(ins)ins.innerHTML=`<span class="it tn">${selCity}物业</span><b>${best.n}</b>(RS ${best.rs})最抗跌。5种物业分化明显。`;
+  entries.forEach(([n,v])=>{const lp=v.prices[v.prices.length-1],tp=cTp(v.prices,v.volumes),rs=cRS(v.prices,APS),dev=(cC(v.prices,12)-cC(cp,12)).toFixed(1),cid=`pt-${n}`;
+    const card=document.createElement('div');card.className='ac';
+    card.innerHTML=`<div class="ach"><span class="acn">${n}</span><span class="tb ${tp.c}">${tp.l}</span></div><div class="acd">${v.desc}</div>
+      <div class="acm"><div class="am"><span class="aml">均价</span><span class="amv">${(lp/10000).toFixed(1)}<small style="font-size:9px">万</small></span></div><div class="am"><span class="aml">RS</span><span class="amv" style="color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</span></div><div class="am"><span class="aml">去化</span><span class="amv">${v.monthsOfSupply}<small style="font-size:9px">月</small></span></div><div class="am"><span class="aml">vs均</span><span class="amv ${parseFloat(dev)>=0?'vu':'vd'}">${parseFloat(dev)>=0?'+':''}${dev}%</span></div></div>
+      <div class="acc"><canvas id="${cid}"></canvas></div>`;c.appendChild(card);
+    const sl=tMO(),sp=tS(v.prices),cpS=tS(cp);
+    setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const sb=cpS[0],mb=sp[0];
+      CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{label:n,data:sp.map(p=>((p-mb)/mb*100).toFixed(2)),borderColor:ptC2[n]||'#999',borderWidth:2,pointRadius:0,tension:.3,fill:false},{label:`${selCity}均`,data:cpS.map(p=>((p-sb)/sb*100).toFixed(2)),borderColor:'#ccc',borderWidth:1.5,borderDash:[4,2],pointRadius:0,tension:.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,pointStyle:'line',padding:4,font:{size:9}}}},scales:{y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{size:9}},grid:{color:'#f5f5f5'}},x:{ticks:{font:{size:8},maxTicksLimit:maxTk()},grid:{display:false}}}}})},80)})}
+
+function rHZ(){dCIP('hz-');const c=document.getElementById('hzC'),t=document.getElementById('m4T'),ins=document.getElementById('iM4');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d)return;if(t)t.innerHTML=`🔥 ${selCity}·热门板块`;const hz=d.hot_zones||{};const entries=Object.entries(hz);if(!entries.length){c.innerHTML=`<div style="color:var(--mu);font-size:12px;padding:20px;text-align:center">暂无板块数据</div>`;return}
+  const rising=entries.filter(([,v])=>cC(v.prices,3)>0).map(([n])=>n);if(ins)ins.innerHTML=`<span class="it ${rising.length?'tp':'tng'}">${selCity}板块</span><b>${rising.length?rising.join('、'):'暂无'}</b>近3月转正。`;
+  entries.forEach(([n,v],i)=>{const lp=v.prices[v.prices.length-1],m3=cC(v.prices,3),yc=cC(v.prices,12),rs=cRS(v.prices,APS),cid=`hz-${n}`;
+    const card=document.createElement('div');card.className='hz';
+    card.innerHTML=`<div class="hzn">${n}</div><div class="hzs">${v.sub}</div><div class="hzr"><span class="hzl">均价</span><span style="font-family:var(--mo);font-weight:600">${(lp/10000).toFixed(1)}万</span></div><div class="hzr"><span class="hzl">近3月</span><span class="${vc(m3)}">${fc(m3)}</span></div><div class="hzr"><span class="hzl">近1年</span><span class="${vc(yc)}">${fc(yc)}</span></div><div class="hzr"><span class="hzl">RS</span><span style="font-family:var(--mo);font-weight:600;color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</span></div><div class="hzc"><canvas id="${cid}"></canvas></div>`;c.appendChild(card);
+    const sp=tS(v.prices),sl=tMO();
+    setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const b=sp[0];CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{data:sp.map(p=>((p-b)/b*100).toFixed(2)),borderColor:CC[i%CC.length],borderWidth:1.5,pointRadius:0,tension:.3,fill:{target:'origin',above:'rgba(41,128,185,.08)'}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}})},120)})}
+
+const arC2=['#c0392b','#e74c3c','#e67e22','#f39c12','#95a5a6'];
+function rAR(){dCIP('ar-');const c=document.getElementById('arC'),t=document.getElementById('m5T'),ins=document.getElementById('iM5');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d||!d.area_rings)return;if(t)t.innerHTML=`🎯 ${selCity}·环线/区域`;const ar=d.area_rings,cp=d.prices;const entries=Object.entries(ar);const best=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return r>b.rs?{n,rs:r}:b},{n:'',rs:0});if(ins)ins.innerHTML=`<span class="it ti">${selCity}区域</span><b>${best.n}</b>(RS ${best.rs})最坚挺。由核心向外递次走弱。`;
+  entries.forEach(([n,v],i)=>{const lp=v.prices[v.prices.length-1],tp=cTp(v.prices,v.volumes),rs=cRS(v.prices,APS),cid=`ar-${n}`;
+    const card=document.createElement('div');card.className='ac';
+    card.innerHTML=`<div class="ach"><span class="acn">${n}</span><span class="tb ${tp.c}">${tp.l}</span></div><div class="acd">${v.desc}</div><div class="acm"><div class="am"><span class="aml">均价</span><span class="amv">${(lp/10000).toFixed(1)}<small style="font-size:9px">万</small></span></div><div class="am"><span class="aml">RS</span><span class="amv" style="color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</span></div><div class="am"><span class="aml">去化</span><span class="amv">${v.monthsOfSupply}<small style="font-size:9px">月</small></span></div><div class="am"><span class="aml">溢价率</span><span class="amv">${(v.premiumRate*100).toFixed(0)}%</span></div></div><div class="acc"><canvas id="${cid}"></canvas></div>`;c.appendChild(card);
+    const sl=tMO(),sp=tS(v.prices),cpS=tS(cp);
+    setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const sb=cpS[0],mb=sp[0];CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{label:n,data:sp.map(p=>((p-mb)/mb*100).toFixed(2)),borderColor:arC2[i%5],borderWidth:2,pointRadius:0,tension:.3,fill:false},{label:`${selCity}均`,data:cpS.map(p=>((p-sb)/sb*100).toFixed(2)),borderColor:'#ccc',borderWidth:1.5,borderDash:[4,2],pointRadius:0,tension:.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,pointStyle:'line',padding:4,font:{size:9}}}},scales:{y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{size:9}},grid:{color:'#f5f5f5'}},x:{ticks:{font:{size:8},maxTicksLimit:maxTk()},grid:{display:false}}}}})},100)})}
+
+function rSG(){const c=document.getElementById('sgC'),t=document.getElementById('m6T'),ins=document.getElementById('iM6');if(!c)return;c.innerHTML='';if(t)t.innerHTML=`🚦 ${selCity}·止跌回升信号`;const d=AC[selCity];if(!d)return;
+  const tg=[{n:`${selCity}(整体)`,t:'城市',p:d.prices,v:d.volumes}];if(d.property_types)Object.entries(d.property_types).forEach(([n,v])=>tg.push({n,t:'物业',p:v.prices,v:v.volumes}));if(d.hot_zones)Object.entries(d.hot_zones).forEach(([n,v])=>tg.push({n,t:'板块',p:v.prices,v:v.volumes}));
+  const onC=tg.filter(x=>dSg(x.p,x.v).s.sd).length,stC=tg.filter(x=>dSg(x.p,x.v).s.st).length,rcC=tg.filter(x=>dSg(x.p,x.v).s.rc).length;
+  if(ins)ins.innerHTML=`<span class="it ${rcC?'tp':stC>2?'tn':'tng'}">${selCity}</span>${tg.length}个市场：<b>${onC}</b>止跌·<b>${stC}</b>走平·<b>${rcC}</b>回升`;
+  tg.forEach(x=>{const{s,d:dt}=dSg(x.p,x.v);const card=document.createElement('div');card.className='sc';
+    card.innerHTML=`<div class="sn2">${x.n} <span style="font-size:10px;color:var(--mu)">${x.t}</span></div><div class="sr"><span class="sd ${s.sd?'so':'sf'}"></span><span class="st2">止跌</span></div><div class="sdt">${dt.sd}</div><div class="sr"><span class="sd ${s.st?'so':s.sd?'sp':'sf'}"></span><span class="st2">走平</span></div><div class="sdt">${dt.st}</div><div class="sr"><span class="sd ${s.rc?'so':s.st?'sp':'sf'}"></span><span class="st2">回升</span></div><div class="sdt">${dt.rc}</div>`;c.appendChild(card)})}
+
+function rRK(){const c=document.getElementById('rkC'),ins=document.getElementById('iM7');if(!c)return;c.innerHTML='';
+  const allE=Object.entries(AC).map(([n,d])=>({n,rs:cRS(d.prices,APS),ry:d.rentYield,yc:cC(d.prices,12),mos:d.monthsOfSupply,pm:d.premiumRate,sh:d.showingIndex,sel:n===selCity}));
+  const cd=AC[selCity];if(cd&&cd.property_types)Object.entries(cd.property_types).forEach(([n,v])=>allE.push({n:`${selCity}·${n}`,rs:cRS(v.prices,APS),ry:v.rentYield,yc:cC(v.prices,12),mos:v.monthsOfSupply,pm:v.premiumRate,sh:v.showingIndex,sel:false}));
+  const best=allE.reduce((b,e)=>e.rs>b.rs?e:b);const selE=allE.find(e=>e.sel);const rsR=[...allE].sort((a,b)=>b.rs-a.rs);const selRk=rsR.findIndex(e=>e.sel)+1;
+  if(ins)ins.innerHTML=`<span class="it ti">排行</span>RS冠军：<b>${best.n}</b>(${best.rs})。<b>${selCity}</b>排第${selRk}/${allE.length}。`;
+  function mk(title,sorted,cols){let h=`<div class="rkt"><h4>${title}</h4><table><thead><tr><th>#</th><th>市场</th>`;cols.forEach(c=>h+=`<th>${c.h}</th>`);h+=`</tr></thead><tbody>`;
+    sorted.slice(0,15).forEach((e,i)=>{h+=`<tr class="${e.sel?'hl':''}"><td><span class="rn ${i<3?'r'+(i+1):''}">${i+1}</span></td><td>${e.sel?'<b>'+e.n+'</b>':e.n}</td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(e)}"`:''}">${c.f(e)}</td>`);h+=`</tr>`});
+    if(!sorted.slice(0,15).find(e=>e.sel)&&selE){const si=sorted.findIndex(e=>e.sel);h+=`<tr class="hl" style="border-top:2px solid var(--b)"><td><span class="rn">${si+1}</span></td><td><b>${selCity}</b></td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(selE)}"`:''}">${c.f(selE)}</td>`);h+=`</tr>`}
+    return h+`</tbody></table></div>`}
+  c.innerHTML=mk('RS 相对强度',rsR,[{h:'RS',f:e=>e.rs,s:e=>`font-family:var(--mo);font-weight:600;color:${e.rs>=60?'var(--g)':e.rs>=40?'var(--warm)':'var(--r)'}`},{h:'1年',f:e=>fc(e.yc),s:e=>`color:${e.yc>=0?'var(--g)':'var(--r)'};font-family:var(--mo);font-weight:600`},{h:'去化',f:e=>e.mos+'月',s:()=>'font-family:var(--mo)'}])+mk('租售比',[...allE].sort((a,b)=>b.ry-a.ry),[{h:'收益',f:e=>`+${e.ry}%`,s:()=>'font-family:var(--mo);font-weight:600;color:var(--g)'},{h:'溢价',f:e=>`${(e.pm*100).toFixed(0)}%`,s:()=>'font-family:var(--mo)'},{h:'带看',f:e=>e.sh,s:()=>'font-family:var(--mo)'}])+mk('去化周期',[...allE].sort((a,b)=>a.mos-b.mos),[{h:'去化',f:e=>e.mos+'月',s:()=>'font-family:var(--mo);font-weight:600'},{h:'RS',f:e=>e.rs,s:()=>'font-family:var(--mo)'},{h:'状态',f:e=>`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:${e.mos<12?'var(--gbg)':e.mos<18?'var(--ybg)':'var(--rbg)'};color:${e.mos<12?'var(--g)':e.mos<18?'var(--warm)':'var(--r)'}">${e.mos<12?'卖方':e.mos<18?'均衡':'买方'}</span>`}])}
+
+// Diagnose vol-price relationship over recent 3 months
+function vpDx(ps,vs){
+  const n=ps.length;if(n<4)return{tag:'数据不足',cls:'ti',tip:''};
+  // 3-month averages vs prior 3-month
+  const rp=ps.slice(-3),pp=ps.slice(-6,-3),rv=vs.slice(-3),pv=vs.slice(-6,-3);
+  const rpA=rp.reduce((a,b)=>a+b,0)/3,ppA=pp.reduce((a,b)=>a+b,0)/Math.max(1,pp.length);
+  const rvA=rv.reduce((a,b)=>a+b,0)/3,pvA=pv.reduce((a,b)=>a+b,0)/Math.max(1,pv.length);
+  const pUp=rpA>ppA*1.002,pDn=rpA<ppA*.998,vUp=rvA>pvA*1.05,vDn=rvA<pvA*.95;
+  if(pUp&&vUp)return{tag:'量价齐升',cls:'tp',tip:'✅ 最健康信号：涨价有真实成交支撑，上涨可持续'};
+  if(pDn&&vUp)return{tag:'放量下跌',cls:'tng',tip:'⚠️ 抛压释放/恐慌出逃，尚未见底，谨慎观望'};
+  if(pUp&&vDn)return{tag:'缩量上涨',cls:'tn',tip:'⚠️ 量价背离：涨价缺乏买盘支撑，可能是虚涨，随时回调'};
+  if(pDn&&vDn)return{tag:'缩量阴跌',cls:'tng',tip:'🔻 有价无市，观望情绪浓。好消息是抛压也在减小'};
+  if(!pUp&&!pDn&&vUp)return{tag:'放量横盘',cls:'tn',tip:'👀 买卖博弈激烈，可能是变盘前兆，密切关注方向'};
+  if(!pUp&&!pDn&&vDn)return{tag:'缩量横盘',cls:'ti',tip:'😴 市场冷淡，买卖双方都在等待信号'};
+  return{tag:'量价平稳',cls:'ti',tip:'市场相对均衡，暂无明显方向'};
 }
 
-// ============================================================
-// ALGORITHMS (identical to v2.1)
-// ============================================================
-function calcChange(prices, periods) {
-  const n = prices.length;
-  const idx = n - 1 - periods;
-  if (idx < 0) return 0;
-  return ((prices[n - 1] - prices[idx]) / prices[idx]) * 100;
-}
+function rVP(){dCIP('vp-');const g=document.getElementById('vpG'),t=document.getElementById('m8T'),ins=document.getElementById('iM8');if(!g)return;g.innerHTML='';if(t)t.innerHTML=`📊 ${selCity}·量价关系`;const d=AC[selCity];if(!d)return;
+  const tg=[{n:`${selCity}(整体)`,col:d.color,p:d.prices,v:d.volumes}];
+  if(d.property_types){const pt=Object.entries(d.property_types);pt.slice(0,2).forEach(([n,v])=>tg.push({n,col:ptC2[n]||'#999',p:v.prices,v:v.volumes}))}
+  if(d.hot_zones){Object.entries(d.hot_zones).slice(0,2).forEach(([n,v])=>tg.push({n,col:CC[tg.length%CC.length],p:v.prices,v:v.volumes}))}
+  tg.push({n:'全国大盘',col:'#333',p:NAT.prices,v:NAT.volumes});
+  // Smart insight with diagnosis
+  const mainDx=vpDx(d.prices,d.volumes);
+  const vc0=((d.volumes[d.volumes.length-1]-d.volumes[Math.max(0,d.volumes.length-7)])/(d.volumes[Math.max(0,d.volumes.length-7)]||1)*100).toFixed(0);
+  if(ins)ins.innerHTML=`<span class="it ${mainDx.cls}">${mainDx.tag}</span><b>${selCity}</b>近3月${mainDx.tip}。成交量较半年前<b>${vc0>0?'+':''}${vc0}%</b>。<br><span style="color:var(--mu);font-size:10px">💡 核心口诀："量在价先"——成交量是领先指标，量变往往早于价变。柱子颜色：<span style="color:var(--g)">■绿=该月价涨</span> <span style="color:var(--r)">■红=该月价跌</span></span>`;
+  tg.forEach((x,i)=>{const cid=`vp-${i}`,div=document.createElement('div');div.className='vpc';
+    const dx=vpDx(x.p,x.v);
+    div.innerHTML=`<canvas id="${cid}"></canvas><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding:3px 6px;background:var(--bg);border-radius:6px;font-size:10px"><span class="it ${dx.cls}" style="margin:0">${dx.tag}</span><span style="color:var(--mu)">${dx.tip.slice(0,30)}${dx.tip.length>30?'...':''}</span></div>`;
+    g.appendChild(div);
+    const sl=tMO(),ps=tS(x.p),vs=tS(x.v);
+    setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const n=ps.length;
+      const vCo=vs.map((_,j)=>j===0?'#bbb':ps[j]>=ps[j-1]?'rgba(45,140,78,.5)':'rgba(192,57,43,.3)');
+      CI[cid]=new Chart(cv.getContext('2d'),{type:'bar',data:{labels:sl,datasets:[{type:'bar',label:'成交量',data:vs,backgroundColor:vCo,borderRadius:3,yAxisID:'y1',order:2},{type:'line',label:'价格',data:ps,borderColor:x.col,borderWidth:2,pointRadius:1,tension:.3,fill:false,yAxisID:'y',order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:x.n,font:{size:11,weight:'600'},color:'#333',align:'start'},legend:{labels:{usePointStyle:true,padding:5,font:{size:9}}},tooltip:{callbacks:{label:c=>c.dataset.label==='价格'?`${c.parsed.y.toLocaleString()}元/㎡`:`${c.parsed.y.toLocaleString()}套`}}},scales:{y:{position:'left',ticks:{callback:v=>`${(v/10000).toFixed(1)}万`,font:{size:8}},grid:{color:'#f0f0f0'}},y1:{position:'right',ticks:{callback:v=>v>=1000?`${(v/1000).toFixed(1)}k`:v,font:{size:8}},grid:{display:false}},x:{ticks:{font:{size:8},maxTicksLimit:maxTk()},grid:{display:false}}}}})},150)})}
 
-function calcSlope(prices, startIdx, endIdx) {
-  if (endIdx <= startIdx || startIdx < 0) return 0;
-  return (prices[endIdx] - prices[startIdx]) / prices[startIdx] * 100 / (endIdx - startIdx);
-}
-
-function calcMomentumChange(prices) {
-  const n = prices.length;
-  if (n < 7) return 0;
-  const recentSlope = calcSlope(prices, n - 4, n - 1);
-  const priorSlope = calcSlope(prices, n - 7, n - 4);
-  return recentSlope - priorSlope;
-}
-
-function calcTrendTemperature(prices, volumes) {
-  const n = prices.length;
-  const recent3 = calcChange(prices, 3);
-  const priceMomentum = Math.max(0, Math.min(100, 50 + recent3 * 15));
-  const recentVol = volumes.slice(-3).reduce((a, b) => a + b, 0) / 3;
-  const priorSlice = volumes.slice(-9, -3);
-  const priorVol = priorSlice.length > 0 ? priorSlice.reduce((a, b) => a + b, 0) / priorSlice.length : recentVol;
-  const volRatio = priorVol > 0 ? recentVol / priorVol : 1;
-  const volumeMomentum = Math.max(0, Math.min(100, volRatio * 50));
-  let consecutive = 0;
-  const lastDir = prices[n - 1] >= prices[n - 2] ? 1 : -1;
-  for (let i = n - 1; i > 0; i--) {
-    if ((prices[i] >= prices[i - 1] ? 1 : -1) === lastDir) consecutive++;
-    else break;
-  }
-  const persistence = Math.max(0, Math.min(100, consecutive * 12 + (lastDir > 0 ? 20 : 0)));
-  const score = priceMomentum * 0.4 + volumeMomentum * 0.3 + persistence * 0.3;
-  let label, cssClass;
-  if (score > 65) { label = '热'; cssClass = 'temp-hot'; }
-  else if (score > 35) { label = '平'; cssClass = 'temp-warm'; }
-  else { label = '寒'; cssClass = 'temp-cold'; }
-  return { score: Math.round(score), label, cssClass };
-}
-
-function calcRS(prices, allMarketPrices) {
-  const periods = [{ months: 1, weight: 0.4 }, { months: 3, weight: 0.35 }, { months: 12, weight: 0.25 }];
-  let wp = 0;
-  periods.forEach(({ months, weight }) => {
-    const myChg = calcChange(prices, Math.min(months, prices.length - 1));
-    const natChg = calcChange(NATIONAL.prices, Math.min(months, NATIONAL.prices.length - 1));
-    const myExcess = myChg - natChg;
-    const allExcess = allMarketPrices.map(mp => calcChange(mp, Math.min(months, mp.length - 1)) - natChg).sort((a, b) => a - b);
-    const rank = allExcess.filter(e => e <= myExcess).length;
-    wp += (rank / allExcess.length) * 100 * weight;
-  });
-  return Math.round(wp);
-}
-
-function detectSignals(prices, volumes) {
-  const n = prices.length;
-  const signals = { stopDecline: false, stabilize: false, recovery: false };
-  const details = { stopDecline: '', stabilize: '', recovery: '' };
-  if (n >= 4) {
-    const c1 = (prices[n-3]-prices[n-4])/prices[n-4]*100;
-    const c2 = (prices[n-2]-prices[n-3])/prices[n-3]*100;
-    const c3 = (prices[n-1]-prices[n-2])/prices[n-2]*100;
-    if (c3 > c2 && c2 > c1) { signals.stopDecline = true; details.stopDecline = `跌幅收窄: ${c1.toFixed(2)}%>${c2.toFixed(2)}%>${c3.toFixed(2)}%`; }
-    else if (c3 > c2) { details.stopDecline = `部分收窄: ${c2.toFixed(2)}%>${c3.toFixed(2)}%`; }
-    else { details.stopDecline = `未收窄: ${c2.toFixed(2)}%>${c3.toFixed(2)}%`; }
-  }
-  if (n >= 2) {
-    const lc = Math.abs((prices[n-1]-prices[n-2])/prices[n-2]*100);
-    const avgV = volumes.slice(-7,-1).reduce((a,b)=>a+b,0)/Math.max(1,volumes.slice(-7,-1).length);
-    const lv = volumes[n-1];
-    if (lc <= 0.3 && lv >= avgV * 0.8) { signals.stabilize = true; details.stabilize = `波动${lc.toFixed(2)}%, 量能${(lv/avgV*100).toFixed(0)}%`; }
-    else { details.stabilize = `波动${lc.toFixed(2)}%, 量能${(lv/(avgV||1)*100).toFixed(0)}%`; }
-  }
-  if (n >= 3) {
-    const cl = (prices[n-1]-prices[n-2])/prices[n-2]*100;
-    const cp = (prices[n-2]-prices[n-3])/prices[n-3]*100;
-    const av = volumes.slice(-7,-1).reduce((a,b)=>a+b,0)/Math.max(1,volumes.slice(-7,-1).length);
-    const ma5 = prices.slice(-5).reduce((a,b)=>a+b,0)/5;
-    if (cl > 0 && cp > 0 && volumes[n-1] > av && prices[n-1] > ma5) {
-      signals.recovery = true; details.recovery = `连续正涨 ${cp.toFixed(2)}%/${cl.toFixed(2)}%, 量超均值, 价>MA5`;
-    } else {
-      const r = [];
-      if (cl <= 0 || cp <= 0) r.push('未连续正涨');
-      if (volumes[n-1] <= av) r.push('量能不足');
-      if (prices[n-1] <= ma5) r.push('价<MA5');
-      details.recovery = r.join(' · ');
-    }
-  }
-  return { signals, details };
-}
-
-function fmtChg(v) { return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`; }
-function fmtChg2(v) { return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`; }
-function chgClass(v) { return v >= 0.05 ? 'metric-val-up' : v <= -0.05 ? 'metric-val-down' : 'metric-val-up'; }
-
-let allPriceSeries = [];
-
-function getTop1City() {
-  const entries = Object.entries(ALL_CITIES)
-    .filter(([n]) => n !== '上海' && n !== '昆山')
-    .map(([name, d]) => ({ name, mc: Math.abs(calcMomentumChange(d.prices)), raw: calcMomentumChange(d.prices), ...d }))
-    .sort((a, b) => b.mc - a.mc);
-  return entries[0];
-}
-
-function renderInsight(id, html) { document.getElementById(id).innerHTML = html; }
-
-// ============================================================
-// LEGEND BUILDER HELPER
-// ============================================================
-function buildLegendHTML(items) {
-  let html = '<div class="legend-box"><span class="legend-title">图例说明</span>';
-  items.forEach(item => {
-    if (item.type === 'dot') {
-      html += `<span class="legend-item"><span class="legend-dot" style="background:${item.color};${item.glow?'box-shadow:0 0 6px '+item.color+'66':''}"></span>${item.label}</span>`;
-    } else if (item.type === 'badge') {
-      html += `<span class="legend-item"><span class="temp-badge ${item.cssClass}" style="padding:1px 6px;font-size:10px">${item.text}</span>${item.label}</span>`;
-    } else if (item.type === 'swatch') {
-      html += `<span class="legend-item"><span class="legend-swatch" style="background:${item.color}"></span>${item.label}</span>`;
-    } else if (item.type === 'text') {
-      html += `<span class="legend-item" style="color:${item.color||'var(--text-muted)'}"><strong>${item.text}</strong> ${item.label}</span>`;
-    }
-  });
-  html += '</div>';
-  return html;
-}
-
-// ============================================================
-// RENDER DASHBOARD
-// ============================================================
-function renderDashboard() {
-  allPriceSeries = [
-    ...Object.values(ALL_CITIES).map(d => d.prices),
-    ...Object.values(PROPERTY_TYPES).map(d => d.prices),
-    ...Object.values(AREA_RINGS).map(d => d.prices),
-    ...Object.values(HOT_ZONES).map(d => d.prices),
-  ];
-
-  const totalCities = Object.keys(ALL_CITIES).length;
-  const today = new Date().toISOString().slice(0, 10);
-  const dataSource = DATA.meta.data_source === 'real' ? '真实数据' : '模型生成';
-
-  document.getElementById('app').innerHTML = `
-  <div class="header">
-    <div>
-      <h1>房产趋势跟踪看板 v3.0</h1>
-      <div class="subtitle">Real Estate Trend Tracker &mdash; 聚焦上海 &middot; 全国${totalCities}城 &middot; 量化视角 &middot; 数据源: ${dataSource}</div>
-    </div>
-    <div class="date-badge">${today}</div>
-  </div>
-
-  <!-- M1: Overview -->
-  <div class="section">
-    <div class="section-title">全国走势 &middot; 上海 vs 大盘 + Top1 异动城市 <span class="badge" style="background:var(--blue-bg);color:var(--blue)">M1</span></div>
-    <div class="insight" id="insightM1"></div>
-    <div id="legendM1"></div>
-    <div class="chart-box"><canvas id="overviewChart"></canvas></div>
-  </div>
-
-  <!-- M2: City Cards -->
-  <div class="section">
-    <div class="section-title">城市趋势卡片 <span class="badge" style="background:var(--green-bg);color:var(--green)">M2</span></div>
-    <div class="insight" id="insightM2"></div>
-    <div id="legendM2"></div>
-    <div class="grid-4" id="cityCardsContainer"></div>
-  </div>
-
-  <!-- M3: Property Types -->
-  <div class="section">
-    <div class="section-title">上海 &middot; 物业类型拆解 <span class="badge" style="background:var(--yellow-bg);color:var(--warm)">M3</span></div>
-    <div class="insight" id="insightM3"></div>
-    <div id="legendM3"></div>
-    <div class="grid-auto" id="propertyCardsContainer"></div>
-  </div>
-
-  <!-- M4: Hot Zones -->
-  <div class="section">
-    <div class="section-title">上海 &middot; 核心热门板块 <span class="badge" style="background:var(--blue-bg);color:var(--blue)">M4</span></div>
-    <div class="insight" id="insightM4"></div>
-    <div id="legendM4"></div>
-    <div class="hotzone-grid" id="hotzoneContainer"></div>
-  </div>
-
-  <!-- M5: Area Rings -->
-  <div class="section">
-    <div class="section-title">上海 &middot; 环线区域分析 <span class="badge" style="background:var(--red-bg);color:var(--red)">M5</span></div>
-    <div class="insight" id="insightM5"></div>
-    <div id="legendM5"></div>
-    <div class="grid-auto" id="areaCardsContainer"></div>
-  </div>
-
-  <!-- M6: Signals -->
-  <div class="section">
-    <div class="section-title">止跌回升信号监测 <span class="badge" style="background:var(--green-bg);color:var(--green)">M6</span></div>
-    <div class="insight" id="insightM6"></div>
-    <div id="legendM6"></div>
-    <div class="signal-grid" id="signalGrid"></div>
-  </div>
-
-  <!-- M7: Rankings -->
-  <div class="section">
-    <div class="section-title">核心指标排行榜 <span class="badge" style="background:var(--yellow-bg);color:var(--warm)">M7</span></div>
-    <div class="insight" id="insightM7"></div>
-    <div id="legendM7"></div>
-    <div class="rankings-container" id="rankingsContainer"></div>
-  </div>
-
-  <!-- M8: Volume-Price -->
-  <div class="section">
-    <div class="section-title">量价关系分析 <span class="badge" style="background:var(--blue-bg);color:var(--blue)">M8</span></div>
-    <div class="insight" id="insightM8"></div>
-    <div id="legendM8"></div>
-    <div class="grid-3" id="volPriceGrid"></div>
-  </div>
-
-  <!-- Methodology -->
-  <div class="section">
-    <div class="section-title">算法与数据说明 &middot; Methodology &amp; Data Sources</div>
-    <div class="methodology">
-      <h4>量化指标体系</h4>
-      <div class="meth-grid">
-        <div class="meth-block">
-          <h5>趋势温度 Trend Temperature</h5>
-          <ul>
-            <li>价格动量 40%：近3月涨跌幅移动平均</li>
-            <li>成交量动量 30%：近3月量 / 前6月均量</li>
-            <li>趋势持续性 30%：连续同向变动月数+方向加成</li>
-            <li>分档：<span style="color:var(--hot)">热(&gt;65)</span> / <span style="color:var(--warm)">平(35-65)</span> / <span style="color:var(--cold)">寒(&lt;35)</span></li>
-          </ul>
-        </div>
-        <div class="meth-block">
-          <h5>相对强度 RS (Relative Strength)</h5>
-          <ul>
-            <li>RS = 市场超额收益的百分位排名(0-100)</li>
-            <li>短期1月40% + 中期3月35% + 长期12月25%</li>
-            <li><span style="color:var(--green)">RS&gt;60 强势</span> / <span style="color:var(--warm)">40-60 中性</span> / <span style="color:var(--red)">RS&lt;40 弱势</span></li>
-            <li>用于识别"抗跌先锋"和"率先走平"的市场</li>
-          </ul>
-        </div>
-        <div class="meth-block">
-          <h5>止跌回升三阶段信号</h5>
-          <ul>
-            <li><span style="color:var(--green)">&#9679;</span> 绿灯=已触发 / <span style="color:var(--yellow)">&#9679;</span> 黄灯=前置已满足 / <span style="color:#ddd">&#9679;</span> 灰灯=未触发</li>
-            <li>止跌(左侧)：月跌幅连续2月收窄+量不创新低</li>
-            <li>走平(确认)：月波动&le;0.3%+量&ge;80%均值</li>
-            <li>回升(右侧)：连续2月正涨+量超均值+价&gt;MA5</li>
-          </ul>
-        </div>
-        <div class="meth-block">
-          <h5>异动城市筛选 Top1 Selection</h5>
-          <ul>
-            <li>动量变化 = 近3月斜率 - 前3月斜率</li>
-            <li>按绝对动量变化值排序(排除上海和昆山)</li>
-            <li>取变化最大的1个城市展示</li>
-            <li>城市池覆盖全国${totalCities}城(含港澳+县级市)</li>
-            <li>捕捉"趋势拐点"而非绝对涨跌</li>
-          </ul>
-        </div>
-        <div class="meth-block">
-          <h5>补充专业指标</h5>
-          <ul>
-            <li>去化周期(Months of Supply)：库存/月均成交</li>
-            <li>挂牌量指数：市场供给压力的领先指标</li>
-            <li>溢价率(Premium Rate)：成交价/挂牌价</li>
-            <li>带看量指数(Showing Index)：需求端领先信号</li>
-            <li>换手率(Turnover Rate)：流动性衡量</li>
-            <li>租售比(Rental Yield)：长期投资回报率</li>
-          </ul>
-        </div>
-        <div class="meth-block">
-          <h5>涨跌幅颜色说明</h5>
-          <ul>
-            <li><span style="color:var(--green)">绿色数字</span> = 价格上涨(正增长)</li>
-            <li><span style="color:var(--red)">红色数字</span> = 价格下跌(负增长)</li>
-            <li>去化&lt;12月：<span style="color:var(--green)">卖方市场</span>(供不应求)</li>
-            <li>去化12-18月：<span style="color:var(--warm)">均衡市场</span></li>
-            <li>去化&gt;18月：<span style="color:var(--red)">买方市场</span>(供过于求)</li>
-          </ul>
-        </div>
-      </div>
-      <div class="data-source">
-        <h5>数据来源说明 Data Sources</h5>
-        <p style="margin-bottom:6px"><strong>当前数据源: ${dataSource}</strong> — 生成时间: ${DATA.meta.generated_at}。数据每日通过 GitHub Actions 自动更新。</p>
-        <ul style="list-style:none; padding:0;">
-          <li style="padding:2px 0">· <strong>贝壳/链家 (ke.com)</strong> — 二手房挂牌价、成交价、带看量、成交周期</li>
-          <li style="padding:2px 0">· <strong>国家统计局70城房价指数</strong> — 月度发布，新房/二手房价格指数</li>
-          <li style="padding:2px 0">· <strong>中指研究院 (fdc.com.cn)</strong> — 百城价格指数、成交面积、土地市场数据</li>
-          <li style="padding:2px 0">· <strong>克而瑞 CRIC (cricchina.com)</strong> — 新房销售排行、去化率、开盘去化、库存数据</li>
-          <li style="padding:2px 0">· <strong>安居客 (anjuke.com)</strong> — 挂牌均价、挂牌量变化</li>
-          <li style="padding:2px 0">· <strong>上海市房地产交易中心 (shfcj.gov.cn)</strong> — 网签数据</li>
-          <li style="padding:2px 0">· <strong>中国房价行情网 (creprice.cn)</strong> — 全国均价走势、租金数据</li>
-        </ul>
-        <p style="margin-top:8px;font-size:11px;color:var(--text-muted)">注：模型生成数据基于城市级别、韧性参数和全国趋势特征构建，供看板展示和算法验证使用。接入真实API后将自动切换为真实数据。</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    房产趋势跟踪看板 v3.0 &middot; 全国${totalCities}城 &middot; 每日自动更新 &middot; 数据仅供趋势分析参考，不构成投资建议<br>
-    模型参考：趋势动物Pro &middot; 量化金融分析视角 &middot; 聚焦上海市场
-  </div>
-  `;
-
-  renderOverview();
-  renderCityCards();
-  renderPropertyCards();
-  renderHotZones();
-  renderAreaRings();
-  renderSignals();
-  renderRankings();
-  renderVolPrice();
-}
-
-// --- M1: Overview ---
-function renderOverview() {
-  const top1 = getTop1City();
-  const shData = ALL_CITIES['上海'];
-  const natYearChg = calcChange(NATIONAL.prices, 12);
-  const shYearChg = calcChange(shData.prices, 12);
-  const natMC = calcMomentumChange(NATIONAL.prices);
-  const totalCities = Object.keys(ALL_CITIES).length;
-
-  renderInsight('insightM1',
-    `<span class="insight-tag ${natMC > 0.05 ? 'tag-positive' : 'tag-neutral'}">大盘研判</span>` +
-    `<strong>全国大盘近1年${fmtChg(natYearChg)}</strong>，但近3个月斜率出现明显变化（动量变化${fmtChg2(natMC)}），` +
-    `<strong>止跌趋势初现</strong>。上海(${fmtChg(shYearChg)})跑赢大盘${(shYearChg - natYearChg).toFixed(1)}个百分点，走势已率先拉平。` +
-    `从全国${totalCities}城池中筛选，本期Top1异动城市：<strong>${top1.name}</strong>（动量变化${top1.raw > 0 ? '+' : ''}${top1.raw.toFixed(3)}），趋势拐点信号最为显著。` +
-    `<br><span style="font-size:11px;color:var(--text-muted)">纵坐标含义：以起始月为基准(=0%)，各城市二手房均价的累计涨跌幅。</span>`
-  );
-
-  document.getElementById('legendM1').innerHTML = buildLegendHTML([
-    { type: 'swatch', color: '#333', label: '全国大盘(虚线)' },
-    { type: 'swatch', color: shData.color, label: '上海(实线)' },
-    { type: 'swatch', color: top1.color, label: `${top1.name}(异动城市)` },
-    { type: 'text', text: '0%线', label: '= 基准月均价，上方为涨、下方为跌', color: 'var(--text-muted)' },
-  ]);
-
-  const ctx = document.getElementById('overviewChart').getContext('2d');
-  const datasets = [];
-  const natBase = NATIONAL.prices[0];
-  datasets.push({
-    label: '全国大盘', data: NATIONAL.prices.map(p => ((p-natBase)/natBase*100).toFixed(2)),
-    borderColor: '#333', borderWidth: 2.5, borderDash: [6,3], pointRadius: 0, tension: 0.3, fill: false,
-  });
-  const shBase = shData.prices[0];
-  datasets.push({
-    label: '上海', data: shData.prices.map(p => ((p-shBase)/shBase*100).toFixed(2)),
-    borderColor: shData.color, borderWidth: 3, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: false,
-  });
-  const t1Base = top1.prices[0];
-  datasets.push({
-    label: `${top1.name} ★异动`, data: top1.prices.map(p => ((p-t1Base)/t1Base*100).toFixed(2)),
-    borderColor: top1.color, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3, fill: false,
-  });
-
-  new Chart(ctx, {
-    type: 'line', data: { labels: MONTHS_FULL, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { intersect: false, mode: 'index' },
-      plugins: {
-        legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', padding: 14, font: { size: 12 } } },
-        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y > 0 ? '+' : ''}${c.parsed.y}%` } },
-      },
-      scales: {
-        y: {
-          title: { display: true, text: '累计涨跌幅(%, 以起始月为基准)', font: { size: 11 }, color: '#999' },
-          ticks: { callback: v => `${v > 0 ? '+' : ''}${v}%`, font: { family: 'monospace', size: 11 } }, grid: { color: '#f0f0f0' },
-        },
-        x: { ticks: { font: { size: 11 } }, grid: { display: false } },
-      },
-    },
-  });
-}
-
-// --- M2: City Cards ---
-function renderCityCards() {
-  const container = document.getElementById('cityCardsContainer');
-  const top1 = getTop1City();
-  const ksData = ALL_CITIES['昆山'];
-  const displayCities = [
-    ['上海', ALL_CITIES['上海'], true, ''],
-    ['昆山', ksData, false, '关注'],
-    [top1.name, ALL_CITIES[top1.name], false, '异动'],
-  ];
-
-  const shTemp = calcTrendTemperature(ALL_CITIES['上海'].prices, ALL_CITIES['上海'].volumes);
-  const shRS = calcRS(ALL_CITIES['上海'].prices, allPriceSeries);
-  const ksTemp = calcTrendTemperature(ksData.prices, ksData.volumes);
-
-  renderInsight('insightM2',
-    `<span class="insight-tag tag-info">核心聚焦</span>` +
-    `上海趋势温度 <strong>${shTemp.label}(${shTemp.score}分)</strong>，RS相对强度 <strong>${shRS}</strong>（跑赢${shRS}%市场），率先企稳。` +
-    `去化周期${ALL_CITIES['上海'].monthsOfSupply}个月(均衡线18月)，带看量指数${ALL_CITIES['上海'].showingIndex}(基准100)。` +
-    `昆山(${ksTemp.label})作为环沪卫星城，与上海联动性强，可作为外溢需求风向标。` +
-    `<strong>${top1.name}</strong>为本期全国异动Top1城市。`
-  );
-
-  document.getElementById('legendM2').innerHTML = buildLegendHTML([
-    { type: 'badge', cssClass: 'temp-hot', text: '热', label: '综合评分>65, 价格上行+量能放大' },
-    { type: 'badge', cssClass: 'temp-warm', text: '平', label: '评分35-65, 价格横盘+量能平稳' },
-    { type: 'badge', cssClass: 'temp-cold', text: '寒', label: '评分<35, 价格下行+量能萎缩' },
-    { type: 'text', text: 'RS', label: '= 相对强度, 0-100, 跑赢X%的市场', color: 'var(--blue)' },
-    { type: 'text', text: '绿↑', label: '价格上涨', color: 'var(--green)' },
-    { type: 'text', text: '红↓', label: '价格下跌', color: 'var(--red)' },
-  ]);
-
-  displayCities.forEach(([name, data, isPrimary, tagText]) => {
-    const lp = data.prices[data.prices.length - 1];
-    const wc = calcChange(data.prices, 1) / 4;
-    const mc = calcChange(data.prices, 1);
-    const yc = calcChange(data.prices, 12);
-    const ytd = calcChange(data.prices, 6);
-    const temp = calcTrendTemperature(data.prices, data.volumes);
-    const rs = calcRS(data.prices, allPriceSeries);
-
-    const card = document.createElement('div');
-    card.className = `city-card${isPrimary ? ' primary' : ''}`;
-    const tagHtml = tagText ? `<span class="highlight-tag">${tagText}</span>` : '';
-    card.innerHTML = `
-      <div class="card-header">
-        <div><div class="city-name">${name}${tagHtml}</div><div class="card-type-label">${data.tier}</div></div>
-        <span class="temp-badge ${temp.cssClass}">${temp.label} ${temp.score}</span>
-      </div>
-      <div class="price-row"><span class="price">${lp.toLocaleString()}</span><span class="price-unit">元/㎡</span></div>
-      <div class="extra-metrics">
-        <span class="em">租售比 <b>${data.rentYield}%</b></span>
-        <span class="em">去化 <b>${data.monthsOfSupply}月</b></span>
-        <span class="em">溢价率 <b>${(data.premiumRate*100).toFixed(0)}%</b></span>
-        <span class="em">带看 <b>${data.showingIndex}</b></span>
-      </div>
-      <div class="metrics">
-        <div class="metric"><span class="metric-label">近一周</span><span class="${chgClass(wc)}">${fmtChg(wc)}</span></div>
-        <div class="metric"><span class="metric-label">近一月</span><span class="${chgClass(mc)}">${fmtChg(mc)}</span></div>
-        <div class="metric"><span class="metric-label">近一年</span><span class="${chgClass(yc)}">${fmtChg(yc)}</span></div>
-        <div class="metric"><span class="metric-label">年初至今</span><span class="${chgClass(ytd)}">${fmtChg(ytd)}</span></div>
-      </div>
-      <div class="rs-row">
-        <div><span class="rs-label">趋势相对强度</span><div class="rs-desc">跑赢${rs}%市场</div></div>
-        <span class="rs-val" style="color:${rs>=60?'var(--green)':rs>=40?'var(--warm)':'var(--red)'}">${rs}</span>
-      </div>
-      <div class="sparkline-container"><canvas id="spark-${name}"></canvas></div>
-    `;
-    container.appendChild(card);
-    setTimeout(() => {
-      new Chart(document.getElementById(`spark-${name}`).getContext('2d'), {
-        type: 'line', data: { labels: MONTHS, datasets: [{ data: data.prices, borderColor: data.color, borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: { target: 'origin', above: data.color + '10' } }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } },
-      });
-    }, 50);
-  });
-}
-
-// --- M3: Property Types ---
-function renderPropertyCards() {
-  const container = document.getElementById('propertyCardsContainer');
-  const shPrices = ALL_CITIES['上海'].prices;
-
-  const types = Object.entries(PROPERTY_TYPES);
-  const bestType = types.reduce((best, [n, d]) => {
-    const rs = calcRS(d.prices, allPriceSeries);
-    return rs > best.rs ? { name: n, rs } : best;
-  }, { name: '', rs: 0 });
-  const worstType = types.reduce((worst, [n, d]) => {
-    const rs = calcRS(d.prices, allPriceSeries);
-    return rs < worst.rs ? { name: n, rs } : worst;
-  }, { name: '', rs: 100 });
-
-  renderInsight('insightM3',
-    `<span class="insight-tag tag-neutral">物业分化</span>` +
-    `上海物业市场呈现<strong>明显分化</strong>：<strong>${bestType.name}</strong>(RS ${bestType.rs})最具韧性，已出现止跌回升迹象；` +
-    `<strong>${worstType.name}</strong>(RS ${worstType.rs})仍在筑底，去化压力较大。` +
-    `老破小受益于学区刚需支撑和总价低优势，带看量指数${PROPERTY_TYPES['老破小'].showingIndex}领跑各品类；` +
-    `改善大平层和远郊新房因总价高、供给量大，恢复节奏将滞后于刚需品类。`
-  );
-
-  document.getElementById('legendM3').innerHTML = buildLegendHTML([
-    { type: 'badge', cssClass: 'temp-hot', text: '热', label: '价格上行动能强' },
-    { type: 'badge', cssClass: 'temp-warm', text: '平', label: '价格横盘中' },
-    { type: 'badge', cssClass: 'temp-cold', text: '寒', label: '价格仍在下跌' },
-    { type: 'text', text: 'vs沪偏离', label: '= 该类型涨跌幅 减 上海整体涨跌幅', color: 'var(--text-secondary)' },
-  ]);
-
-  types.forEach(([name, data]) => {
-    const lp = data.prices[data.prices.length - 1];
-    const yc = calcChange(data.prices, 12);
-    const temp = calcTrendTemperature(data.prices, data.volumes);
-    const rs = calcRS(data.prices, allPriceSeries);
-    const dev = (calcChange(data.prices, 12) - calcChange(shPrices, 12)).toFixed(1);
-
-    const card = document.createElement('div');
-    card.className = 'area-card';
-    card.innerHTML = `
-      <div class="ac-header"><span class="ac-name">${name}</span><span class="temp-badge ${temp.cssClass}">${temp.label}</span></div>
-      <div class="ac-desc">${data.desc}</div>
-      <div class="ac-metrics">
-        <div class="am"><span class="am-label">均价</span><span class="am-val">${(lp/10000).toFixed(1)}<small style="font-size:9px">万</small></span></div>
-        <div class="am"><span class="am-label">RS</span><span class="am-val" style="color:${rs>=60?'var(--green)':rs>=40?'var(--warm)':'var(--red)'}">${rs}</span></div>
-        <div class="am"><span class="am-label">去化周期</span><span class="am-val">${data.monthsOfSupply}<small style="font-size:9px">月</small></span></div>
-        <div class="am"><span class="am-label">vs沪偏离</span><span class="am-val ${parseFloat(dev)>=0?'metric-val-up':'metric-val-down'}">${parseFloat(dev)>=0?'+':''}${dev}%</span></div>
-      </div>
-      <div class="ac-chart"><canvas id="prop-${name}"></canvas></div>
-    `;
-    container.appendChild(card);
-    setTimeout(() => {
-      const shBase = shPrices[0]; const myBase = data.prices[0];
-      new Chart(document.getElementById(`prop-${name}`).getContext('2d'), {
-        type: 'line', data: { labels: MONTHS, datasets: [
-          { label: name, data: data.prices.map(p=>((p-myBase)/myBase*100).toFixed(2)), borderColor: data.color, borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
-          { label: '上海', data: shPrices.map(p=>((p-shBase)/shBase*100).toFixed(2)), borderColor: '#ccc', borderWidth: 1.5, borderDash: [4,2], pointRadius: 0, tension: 0.3, fill: false },
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'line', padding: 6, font: { size: 10 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y>0?'+':''}${c.parsed.y}%` } } }, scales: { y: { ticks: { callback: v => `${v>0?'+':''}${v}%`, font: { size: 9 } }, grid: { color: '#f5f5f5' } }, x: { ticks: { font: { size: 9 } }, grid: { display: false } } } },
-      });
-    }, 80);
-  });
-}
-
-// --- M4: Hot Zones ---
-function renderHotZones() {
-  const container = document.getElementById('hotzoneContainer');
-  const zones = Object.entries(HOT_ZONES);
-  const rising = zones.filter(([,d]) => calcChange(d.prices, 3) > 0).map(([n]) => n);
-
-  renderInsight('insightM4',
-    `<span class="insight-tag tag-positive">板块信号</span>` +
-    `上海核心板块中，<strong>${rising.length > 0 ? rising.join('、') : '暂无'}</strong>近3个月价格已转正，` +
-    (HOT_ZONES['新天地'] ? `<strong>新天地</strong>（溢价率${(HOT_ZONES['新天地'].premiumRate*100).toFixed(0)}%、去化${HOT_ZONES['新天地'].monthsOfSupply}月）为全市最坚挺板块，` : '') +
-    `属于"绝对稀缺+顶级地段"的定价锚。<strong>前滩</strong>和<strong>徐汇滨江</strong>作为高端改善标杆，率先企稳回升，` +
-    `可作为上海市场情绪的"领先指标"——当高端盘走稳，中端盘通常会在3-6个月后跟进。`
-  );
-
-  document.getElementById('legendM4').innerHTML = buildLegendHTML([
-    { type: 'text', text: 'RS', label: '= 相对强度, 越高越抗跌', color: 'var(--blue)' },
-    { type: 'text', text: '去化', label: '= 按当前速度卖完库存需X月', color: 'var(--text-secondary)' },
-    { type: 'text', text: '溢价率', label: '= 成交价/挂牌价, >98%说明市场强势', color: 'var(--text-secondary)' },
-    { type: 'text', text: '绿↑', label: '上涨', color: 'var(--green)' },
-    { type: 'text', text: '红↓', label: '下跌', color: 'var(--red)' },
-  ]);
-
-  zones.forEach(([name, data]) => {
-    const lp = data.prices[data.prices.length - 1];
-    const m3 = calcChange(data.prices, 3);
-    const yc = calcChange(data.prices, 12);
-    const rs = calcRS(data.prices, allPriceSeries);
-
-    const card = document.createElement('div');
-    card.className = 'hz-card';
-    card.innerHTML = `
-      <div class="hz-name">${name}</div>
-      <div class="hz-sub">${data.sub}</div>
-      <div class="hz-row"><span class="hz-label">均价</span><span style="font-family:var(--mono);font-weight:600">${(lp/10000).toFixed(1)}万/㎡</span></div>
-      <div class="hz-row"><span class="hz-label">近3月</span><span class="${chgClass(m3)}">${fmtChg(m3)}</span></div>
-      <div class="hz-row"><span class="hz-label">近1年</span><span class="${chgClass(yc)}">${fmtChg(yc)}</span></div>
-      <div class="hz-row"><span class="hz-label">RS</span><span style="font-family:var(--mono);font-weight:600;color:${rs>=60?'var(--green)':rs>=40?'var(--warm)':'var(--red)'}">${rs}</span></div>
-      <div class="hz-row"><span class="hz-label">去化</span><span style="font-family:var(--mono)">${data.monthsOfSupply}月</span></div>
-      <div class="hz-row"><span class="hz-label">溢价率</span><span style="font-family:var(--mono)">${(data.premiumRate*100).toFixed(0)}%</span></div>
-      <div class="hz-chart"><canvas id="hz-${name}"></canvas></div>
-    `;
-    container.appendChild(card);
-    setTimeout(() => {
-      const base = data.prices[0];
-      new Chart(document.getElementById(`hz-${name}`).getContext('2d'), {
-        type: 'line', data: { labels: MONTHS, datasets: [{ data: data.prices.map(p=>((p-base)/base*100).toFixed(2)), borderColor: data.color, borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: { target: 'origin', above: data.color + '12' } }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } },
-      });
-    }, 120);
-  });
-}
-
-// --- M5: Area Rings ---
-function renderAreaRings() {
-  const container = document.getElementById('areaCardsContainer');
-  const shPrices = ALL_CITIES['上海'].prices;
-  const rings = Object.entries(AREA_RINGS);
-  const bestRing = rings.reduce((b,[n,d]) => { const rs = calcRS(d.prices, allPriceSeries); return rs > b.rs ? {name:n, rs, mos: d.monthsOfSupply} : b; }, {name:'',rs:0});
-
-  renderInsight('insightM5',
-    `<span class="insight-tag tag-info">环线梯度</span>` +
-    `上海呈现<strong>"由内向外递次走弱"</strong>的经典环线梯度：<strong>${bestRing.name}</strong>(RS ${bestRing.rs}, 去化${bestRing.mos}月)最为坚挺，` +
-    `核心地段稀缺性支撑价格韧性。外环外去化周期达${AREA_RINGS['外环外'] ? AREA_RINGS['外环外'].monthsOfSupply : 'N/A'}个月，供需严重失衡。` +
-    (AREA_RINGS['内中环'] ? `<strong>内中环</strong>是刚需改善的主力战场，溢价率${(AREA_RINGS['内中环'].premiumRate*100).toFixed(0)}%，` : '') +
-    `建议重点关注内中环止跌→走平的信号确认。`
-  );
-
-  document.getElementById('legendM5').innerHTML = buildLegendHTML([
-    { type: 'badge', cssClass: 'temp-hot', text: '热', label: '上行动能强' },
-    { type: 'badge', cssClass: 'temp-warm', text: '平', label: '横盘整理' },
-    { type: 'badge', cssClass: 'temp-cold', text: '寒', label: '仍在下行' },
-    { type: 'swatch', color: '#ccc', label: '灰色虚线 = 上海整体均线(对比基准)' },
-  ]);
-
-  rings.forEach(([name, data]) => {
-    const lp = data.prices[data.prices.length - 1];
-    const temp = calcTrendTemperature(data.prices, data.volumes);
-    const rs = calcRS(data.prices, allPriceSeries);
-
-    const card = document.createElement('div');
-    card.className = 'area-card';
-    card.innerHTML = `
-      <div class="ac-header"><span class="ac-name">${name}</span><span class="temp-badge ${temp.cssClass}">${temp.label}</span></div>
-      <div class="ac-desc">${data.desc}</div>
-      <div class="ac-metrics">
-        <div class="am"><span class="am-label">均价</span><span class="am-val">${(lp/10000).toFixed(1)}<small style="font-size:9px">万</small></span></div>
-        <div class="am"><span class="am-label">RS</span><span class="am-val" style="color:${rs>=60?'var(--green)':rs>=40?'var(--warm)':'var(--red)'}">${rs}</span></div>
-        <div class="am"><span class="am-label">去化</span><span class="am-val">${data.monthsOfSupply}<small style="font-size:9px">月</small></span></div>
-        <div class="am"><span class="am-label">溢价率</span><span class="am-val">${(data.premiumRate*100).toFixed(0)}%</span></div>
-      </div>
-      <div class="ac-chart"><canvas id="area-${name}"></canvas></div>
-    `;
-    container.appendChild(card);
-    setTimeout(() => {
-      const shBase = shPrices[0]; const myBase = data.prices[0];
-      new Chart(document.getElementById(`area-${name}`).getContext('2d'), {
-        type: 'line', data: { labels: MONTHS, datasets: [
-          { label: name, data: data.prices.map(p=>((p-myBase)/myBase*100).toFixed(2)), borderColor: data.color, borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
-          { label: '上海均', data: shPrices.map(p=>((p-shBase)/shBase*100).toFixed(2)), borderColor: '#ccc', borderWidth: 1.5, borderDash: [4,2], pointRadius: 0, tension: 0.3, fill: false },
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'line', padding: 6, font: { size: 9 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y>0?'+':''}${c.parsed.y}%` } } }, scales: { y: { ticks: { callback: v => `${v>0?'+':''}${v}%`, font: { size: 9 } }, grid: { color: '#f5f5f5' } }, x: { ticks: { font: { size: 9 } }, grid: { display: false } } } },
-      });
-    }, 100);
-  });
-}
-
-// --- M6: Signal Detection ---
-function renderSignals() {
-  const container = document.getElementById('signalGrid');
-  const targets = [
-    { name: '上海(整体)', type: '城市', ...ALL_CITIES['上海'] },
-    { name: '昆山', type: '城市', ...ALL_CITIES['昆山'] },
-    ...Object.entries(PROPERTY_TYPES).map(([n,d]) => ({ name: `沪·${n}`, type: '物业', ...d })),
-    ...Object.entries(HOT_ZONES).map(([n,d]) => ({ name: `沪·${n}`, type: '板块', ...d })),
-  ];
-
-  const onCount = targets.filter(t => detectSignals(t.prices, t.volumes).signals.stopDecline).length;
-  const stbCount = targets.filter(t => detectSignals(t.prices, t.volumes).signals.stabilize).length;
-  const recCount = targets.filter(t => detectSignals(t.prices, t.volumes).signals.recovery).length;
-
-  renderInsight('insightM6',
-    `<span class="insight-tag ${recCount > 0 ? 'tag-positive' : stbCount > 2 ? 'tag-neutral' : 'tag-negative'}">信号汇总</span>` +
-    `当前监测的${targets.length}个市场中：<strong>${onCount}个</strong>触发止跌信号，<strong>${stbCount}个</strong>确认走平，<strong>${recCount}个</strong>进入回升通道。` +
-    (recCount > 0 ? ` 已有市场进入右侧交易窗口，值得重点关注。` :
-     stbCount > 2 ? ` 多数细分市场处于"左侧止跌→走平确认"阶段，建议持续跟踪量价配合信号。` :
-     ` 整体仍在筑底期，右侧信号尚未确认，建议耐心等待。`)
-  );
-
-  document.getElementById('legendM6').innerHTML = buildLegendHTML([
-    { type: 'dot', color: 'var(--green)', glow: true, label: '绿灯 = 信号已触发(条件全部满足)' },
-    { type: 'dot', color: 'var(--yellow)', glow: true, label: '黄灯 = 前置信号已满足(等待确认)' },
-    { type: 'dot', color: '#ddd', glow: false, label: '灰灯 = 信号未触发' },
-    { type: 'text', text: '三阶段:', label: '止跌(左侧观察) → 走平(确认) → 回升(右侧行动)', color: 'var(--text-secondary)' },
-  ]);
-
-  targets.forEach(target => {
-    const { signals, details } = detectSignals(target.prices, target.volumes);
-    const card = document.createElement('div');
-    card.className = 'signal-card';
-    card.innerHTML = `
-      <div class="signal-name">${target.name} <span style="font-size:10px;color:var(--text-muted)">${target.type}</span></div>
-      <div class="signal-row"><span class="signal-dot ${signals.stopDecline?'signal-on':'signal-off'}"></span><span class="signal-text">止跌 (左侧)</span></div>
-      <div class="signal-detail">${details.stopDecline}</div>
-      <div class="signal-row"><span class="signal-dot ${signals.stabilize?'signal-on':signals.stopDecline?'signal-pending':'signal-off'}"></span><span class="signal-text">走平 (确认)</span></div>
-      <div class="signal-detail">${details.stabilize}</div>
-      <div class="signal-row"><span class="signal-dot ${signals.recovery?'signal-on':signals.stabilize?'signal-pending':'signal-off'}"></span><span class="signal-text">回升 (右侧)</span></div>
-      <div class="signal-detail">${details.recovery}</div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// --- M7: Rankings ---
-function renderRankings() {
-  const container = document.getElementById('rankingsContainer');
-  const entries = [
-    ...Object.entries(ALL_CITIES).filter(([n]) => n === '上海' || n === '昆山' || n === getTop1City().name).map(([n,d]) => ({
-      name: n, rs: calcRS(d.prices, allPriceSeries), rentYield: d.rentYield, vol: Math.abs(calcChange(d.prices,3)),
-      yearChg: calcChange(d.prices,12), mos: d.monthsOfSupply, prem: d.premiumRate, showing: d.showingIndex,
-    })),
-    ...Object.entries(PROPERTY_TYPES).map(([n,d]) => ({
-      name: `沪·${n}`, rs: calcRS(d.prices, allPriceSeries), rentYield: d.rentYield, vol: Math.abs(calcChange(d.prices,3)),
-      yearChg: calcChange(d.prices,12), mos: d.monthsOfSupply, prem: d.premiumRate, showing: d.showingIndex,
-    })),
-    ...Object.entries(AREA_RINGS).map(([n,d]) => ({
-      name: `沪·${n}`, rs: calcRS(d.prices, allPriceSeries), rentYield: d.rentYield, vol: Math.abs(calcChange(d.prices,3)),
-      yearChg: calcChange(d.prices,12), mos: d.monthsOfSupply, prem: d.premiumRate, showing: d.showingIndex,
-    })),
-  ];
-
-  const best = entries.reduce((b,e) => e.rs > b.rs ? e : b);
-  renderInsight('insightM7',
-    `<span class="insight-tag tag-info">排行洞察</span>` +
-    `RS抗跌冠军：<strong>${best.name}</strong>(RS ${best.rs})。` +
-    `租售比最高的市场往往是"价格已充分回调+租金坚挺"的品类，具备更好的安全边际。` +
-    `去化周期<12月的市场处于卖方市场，议价空间小；>18月的市场处于买方市场，可从容择机。`
-  );
-
-  document.getElementById('legendM7').innerHTML = buildLegendHTML([
-    { type: 'text', text: '#1-3', label: '金银铜排名标注', color: '#e6a23c' },
-    { type: 'text', text: '卖方', label: '去化<12月, 供不应求', color: 'var(--green)' },
-    { type: 'text', text: '均衡', label: '去化12-18月', color: 'var(--warm)' },
-    { type: 'text', text: '买方', label: '去化>18月, 供过于求', color: 'var(--red)' },
-  ]);
-
-  const rsRank = [...entries].sort((a,b) => b.rs - a.rs);
-  container.innerHTML = `
-    <div class="ranking-table">
-      <h4>RS 相对强度排行</h4>
-      <table><thead><tr><th>#</th><th>市场</th><th>RS</th><th>近1年</th><th>去化</th></tr></thead>
-      <tbody>${rsRank.map((e,i) => `<tr><td><span class="rank-num ${i<3?'rank-'+(i+1):''}">${i+1}</span></td><td>${e.name}</td>
-        <td style="font-family:var(--mono);font-weight:600;color:${e.rs>=60?'var(--green)':e.rs>=40?'var(--warm)':'var(--red)'}">${e.rs}</td>
-        <td class="${e.yearChg>=0?'metric-val-up':'metric-val-down'}">${fmtChg(e.yearChg)}</td>
-        <td style="font-family:var(--mono)">${e.mos}月</td></tr>`).join('')}</tbody></table>
-    </div>
-    <div class="ranking-table">
-      <h4>租售比排行 (投资回报率)</h4>
-      <table><thead><tr><th>#</th><th>市场</th><th>收益率</th><th>溢价率</th><th>带看</th></tr></thead>
-      <tbody>${[...entries].sort((a,b)=>b.rentYield-a.rentYield).map((e,i) => `<tr><td><span class="rank-num ${i<3?'rank-'+(i+1):''}">${i+1}</span></td><td>${e.name}</td>
-        <td style="font-family:var(--mono);font-weight:600;color:var(--green)">+${e.rentYield}%</td>
-        <td style="font-family:var(--mono)">${(e.prem*100).toFixed(0)}%</td>
-        <td style="font-family:var(--mono)">${e.showing}</td></tr>`).join('')}</tbody></table>
-    </div>
-    <div class="ranking-table">
-      <h4>去化周期排行 (供需平衡)</h4>
-      <table><thead><tr><th>#</th><th>市场</th><th>去化</th><th>RS</th><th>状态</th></tr></thead>
-      <tbody>${[...entries].sort((a,b)=>a.mos-b.mos).map((e,i) => `<tr><td><span class="rank-num ${i<3?'rank-'+(i+1):''}">${i+1}</span></td><td>${e.name}</td>
-        <td style="font-family:var(--mono);font-weight:600">${e.mos}月</td>
-        <td style="font-family:var(--mono)">${e.rs}</td>
-        <td><span style="font-size:10px;padding:1px 6px;border-radius:8px;background:${e.mos<12?'var(--green-bg)':e.mos<18?'var(--yellow-bg)':'var(--red-bg)'};color:${e.mos<12?'var(--green)':e.mos<18?'var(--warm)':'var(--red)'}">${e.mos<12?'卖方':e.mos<18?'均衡':'买方'}</span></td></tr>`).join('')}</tbody></table>
-    </div>
-  `;
-}
-
-// --- M8: Volume-Price ---
-function renderVolPrice() {
-  const grid = document.getElementById('volPriceGrid');
-  const targets = [
-    { name: '上海(整体)', ...ALL_CITIES['上海'] },
-    { name: '沪·老破小', color: PROPERTY_TYPES['老破小'].color, ...PROPERTY_TYPES['老破小'] },
-    { name: '沪·次新房', color: PROPERTY_TYPES['次新房'].color, ...PROPERTY_TYPES['次新房'] },
-    { name: '沪·前滩', color: HOT_ZONES['前滩'].color, ...HOT_ZONES['前滩'] },
-    { name: '沪·张江', color: HOT_ZONES['张江'].color, ...HOT_ZONES['张江'] },
-    { name: '昆山', ...ALL_CITIES['昆山'] },
-  ];
-
-  const shD = ALL_CITIES['上海'];
-  const shVolChg = ((shD.volumes[12] - shD.volumes[6]) / shD.volumes[6] * 100).toFixed(0);
-  renderInsight('insightM8',
-    `<span class="insight-tag tag-positive">量价配合</span>` +
-    `上海整体成交量较年初回升<strong>${shVolChg}%</strong>，量能恢复是价格企稳的前置信号。` +
-    `重点关注"量先价动"特征——当成交量持续放大但价格尚未跟涨时，往往是建仓窗口。`
-  );
-
-  document.getElementById('legendM8').innerHTML = buildLegendHTML([
-    { type: 'swatch', color: 'rgba(45,140,78,0.5)', label: '绿柱 = 该月价格环比上涨' },
-    { type: 'swatch', color: 'rgba(192,57,43,0.3)', label: '红柱 = 该月价格环比下跌' },
-    { type: 'text', text: '⚠', label: '量价背离预警(量涨价跌或量跌价涨)', color: 'var(--red)' },
-    { type: 'text', text: '左Y轴', label: '= 价格(万/㎡)', color: 'var(--text-muted)' },
-    { type: 'text', text: '右Y轴', label: '= 成交量(套)', color: 'var(--text-muted)' },
-  ]);
-
-  targets.forEach((target, idx) => {
-    const div = document.createElement('div');
-    div.className = 'vol-price-container';
-    div.innerHTML = `<canvas id="vp-${idx}"></canvas>`;
-    grid.appendChild(div);
-    setTimeout(() => {
-      const ctx = document.getElementById(`vp-${idx}`).getContext('2d');
-      const n = target.prices.length;
-      const pUp = target.prices[n-1] > target.prices[n-2];
-      const vUp = target.volumes[n-1] > target.volumes[n-2];
-      const divergence = pUp !== vUp;
-      const volColors = target.volumes.map((v,i) => i === 0 ? '#bbb' : target.prices[i] >= target.prices[i-1] ? 'rgba(45,140,78,0.5)' : 'rgba(192,57,43,0.3)');
-      new Chart(ctx, {
-        type: 'bar', data: { labels: MONTHS, datasets: [
-          { type: 'bar', label: '成交量', data: target.volumes, backgroundColor: volColors, borderRadius: 3, yAxisID: 'y1', order: 2 },
-          { type: 'line', label: '价格', data: target.prices, borderColor: target.color, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4, tension: 0.3, fill: false, yAxisID: 'y', order: 1 },
-        ]},
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            title: { display: true, text: target.name + (divergence ? ' ⚠ 量价背离' : ''), font: { size: 13, weight: '600' }, color: divergence ? '#c0392b' : '#333', align: 'start' },
-            legend: { labels: { usePointStyle: true, padding: 8, font: { size: 10 } } },
-            tooltip: { callbacks: { label: c => c.dataset.label === '价格' ? `价格: ${c.parsed.y.toLocaleString()}元/㎡` : `成交: ${c.parsed.y.toLocaleString()}套` } },
-          },
-          scales: {
-            y: { position: 'left', ticks: { callback: v => `${(v/10000).toFixed(1)}万`, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
-            y1: { position: 'right', ticks: { callback: v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v, font: { size: 10 } }, grid: { display: false } },
-            x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-          },
-        },
-      });
-    }, 150);
-  });
-}
-
-// ============================================================
-// INIT
-// ============================================================
 loadData();
 </script>
 </body>
