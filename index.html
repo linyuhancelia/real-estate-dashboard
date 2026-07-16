@@ -87,7 +87,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--t);line-height:1.6}
 .rkt h4{font-size:12px;font-weight:600;margin-bottom:6px;color:var(--t2)}
 .rkt table{width:100%;border-collapse:collapse;font-size:11px}
 .rkt th{text-align:left;padding:4px 5px;border-bottom:1px solid var(--bd);color:var(--mu);font-weight:500}
-.rkt td{padding:5px;border-bottom:1px solid #f5f5f5}.rkt tr.hl{background:var(--bbg)}
+.rkt td{padding:5px;border-bottom:1px solid #f5f5f5;white-space:nowrap;vertical-align:middle}.rkt tr.hl{background:var(--bbg)}
+.rktm{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rn{font-family:var(--mo);font-weight:700;width:18px;display:inline-block}.r1{color:#e6a23c}.r2{color:#909399}.r3{color:#b87333}
 .vpc{background:var(--card);border-radius:var(--rd);padding:12px;box-shadow:var(--sh);border:1px solid var(--bd)}.vpc canvas{max-height:200px}
 .vu{color:var(--g);font-weight:600;font-family:var(--mo)}.vd{color:var(--r);font-weight:600;font-family:var(--mo)}
@@ -425,8 +426,8 @@ function rRK(){const c=document.getElementById('rkC'),ins=document.getElementByI
   const best=allE.reduce((b,e)=>e.rs>b.rs?e:b);const selE=allE.find(e=>e.sel);const rsR=[...allE].sort((a,b)=>b.rs-a.rs);const selRk=rsR.findIndex(e=>e.sel)+1;
   if(ins)ins.innerHTML=`<span class="it ti">排行</span>RS冠军：<b>${best.n}</b>(${best.rs})。<b>${selCity}</b>排第${selRk}/${allE.length}。`;
   function mk(title,sorted,cols){let h=`<div class="rkt"><h4>${title}</h4><table><thead><tr><th>#</th><th>市场</th>`;cols.forEach(c=>h+=`<th>${c.h}</th>`);h+=`</tr></thead><tbody>`;
-    sorted.slice(0,15).forEach((e,i)=>{h+=`<tr class="${e.sel?'hl':''}"><td><span class="rn ${i<3?'r'+(i+1):''}">${i+1}</span></td><td>${e.sel?'<b>'+e.n+'</b>':e.n}</td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(e)}"`:''}">${c.f(e)}</td>`);h+=`</tr>`});
-    if(!sorted.slice(0,15).find(e=>e.sel)&&selE){const si=sorted.findIndex(e=>e.sel);h+=`<tr class="hl" style="border-top:2px solid var(--b)"><td><span class="rn">${si+1}</span></td><td><b>${selCity}</b></td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(selE)}"`:''}">${c.f(selE)}</td>`);h+=`</tr>`}
+    sorted.slice(0,15).forEach((e,i)=>{h+=`<tr class="${e.sel?'hl':''}"><td><span class="rn ${i<3?'r'+(i+1):''}">${i+1}</span></td><td class="rktm">${e.sel?'<b>'+e.n+'</b>':e.n}</td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(e)}"`:''}>` +c.f(e)+'</td>');h+=`</tr>`});
+    if(!sorted.slice(0,15).find(e=>e.sel)&&selE){const si=sorted.findIndex(e=>e.sel);h+=`<tr class="hl" style="border-top:2px solid var(--b)"><td><span class="rn">${si+1}</span></td><td class="rktm"><b>${selCity}</b></td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(selE)}"`:''}>` +c.f(selE)+'</td>');h+=`</tr>`}
     return h+`</tbody></table></div>`}
   c.innerHTML=mk('RS 相对强度',rsR,[{h:'RS',f:e=>e.rs,s:e=>`font-family:var(--mo);font-weight:600;color:${e.rs>=60?'var(--g)':e.rs>=40?'var(--warm)':'var(--r)'}`},{h:'1年',f:e=>fc(e.yc),s:e=>`color:${e.yc>=0?'var(--g)':'var(--r)'};font-family:var(--mo);font-weight:600`},{h:'去化',f:e=>e.mos+'月',s:()=>'font-family:var(--mo)'}])+mk('租售比',[...allE].sort((a,b)=>b.ry-a.ry),[{h:'收益',f:e=>`+${e.ry}%`,s:()=>'font-family:var(--mo);font-weight:600;color:var(--g)'},{h:'溢价',f:e=>`${(e.pm*100).toFixed(0)}%`,s:()=>'font-family:var(--mo)'},{h:'带看',f:e=>e.sh,s:()=>'font-family:var(--mo)'}])+mk('去化周期',[...allE].sort((a,b)=>a.mos-b.mos),[{h:'去化',f:e=>e.mos+'月',s:()=>'font-family:var(--mo);font-weight:600'},{h:'RS',f:e=>e.rs,s:()=>'font-family:var(--mo)'},{h:'状态',f:e=>`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:${e.mos<12?'var(--gbg)':e.mos<18?'var(--ybg)':'var(--rbg)'};color:${e.mos<12?'var(--g)':e.mos<18?'var(--warm)':'var(--r)'}">${e.mos<12?'卖方':e.mos<18?'均衡':'买方'}</span>`}])}
 
