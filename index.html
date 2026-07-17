@@ -265,13 +265,13 @@ function renderAll(){
 
   <div class="S" id="s-vp"><div class="SH" onclick="tog('bm8')"><div class="ST" id="m8T">📊 量价关系</div><span class="stg">▾</span></div><div class="SB" id="bm8"><div class="ins" id="iM8"></div><div class="g3" id="vpG"></div></div></div>
 
-  <div class="foot">房产趋势看板 v5.1 · 全国${tc}城 · 安居客+中国房价行情 多源交叉 · 不构成投资建议</div>`;
+  <div class="foot">房产趋势看板 v5.2 · 全国${tc}城 · 安居客+中国房价行情+房天下 三源交叉 · 不构成投资建议</div>`;
   // Populate doc panel
   document.getElementById('docBody').innerHTML=`<div class="meth">
 <h4>📡 数据来源与更新</h4>
 <div class="ex">
-<b>当前数据来源</b>：安居客(anjuke.com) + 中国房价行情(creprice.cn) <b>多源融合</b>，覆盖全国125个城市。安居客提供基准均价（每年8-12月），中国房价行情补全全年月度趋势，通过环比变化率对齐融合。一线/新一线城市的热门板块细化到镇/街道级别。<br><br>
-<b>⚠️ 数据说明</b>：价格为二手房挂牌均价（非成交价），以安居客为基准，缺失月份由中国房价行情月环比推算补全。成交量为基于价格趋势的估算模型。物业类型拆分基于城市均价的结构化模型。<br><br>
+<b>当前数据来源</b>：安居客(anjuke.com) + 中国房价行情(creprice.cn) + 房天下(fang.com) <b>三源融合</b>，覆盖全国125个城市。安居客提供基准均价（每年8-12月），中国房价行情补全月度趋势（13个月），房天下补全剩余缺口（12-36个月，430+城覆盖）。一线/新一线城市的热门板块细化到区级。<br><br>
+<b>⚠️ 数据说明</b>：价格为二手房挂牌均价（非成交价），以安居客为基准，缺失月份由中国房价行情和房天下的月环比推算补全。成交量为基于价格趋势的估算模型。物业类型拆分基于城市均价的结构化模型。<br><br>
 <b>更新频率</b>：每日自动更新（北京时间16:00），通过GitHub Actions定时任务触发数据刷新并自动部署。
 </div>
 
