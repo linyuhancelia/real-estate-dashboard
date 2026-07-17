@@ -190,10 +190,9 @@ function tS(arr){return TP>=arr.length?arr:arr.slice(-(TP+1))}
 function tMO(){return TP>=MOF.length?MO:MO.slice(-(TP+1))}
 function maxTk(){return TP<=6?7:TP<=12?12:14}
 
-// FIX: Top1 only from 一线/新一线/二线 (filter out tiny cities with noise)
 function getTop1(){
-  const tiers=['一线','新一线','二线'];
-  return Object.entries(AC).filter(([n,d])=>n!=='上海'&&tiers.includes(d.tier))
+  const hasData=p=>{const t=p.slice(-7);return new Set(t).size>1};
+  return Object.entries(AC).filter(([n,d])=>n!=='上海'&&hasData(d.prices))
     .map(([n,d])=>({n,mc:Math.abs(cMo(d.prices)),raw:cMo(d.prices),...d}))
     .sort((a,b)=>b.mc-a.mc)[0]
 }
