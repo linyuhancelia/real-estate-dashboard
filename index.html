@@ -69,6 +69,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--t);line-height:1.6}
 .ac .aml{font-size:8px;color:var(--mu);display:block}.ac .amv{font-size:12px;font-weight:700;font-family:var(--mo)}
 .ac .acc{height:80px}.ac .acc canvas{max-height:80px}
 .hzg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.hzfb{margin-bottom:8px;display:flex;gap:6px;align-items:center}.hzfb select{padding:5px 8px;border:1px solid var(--bd);border-radius:8px;font-size:12px;background:var(--card);font-family:var(--f);outline:none}
+.hzgg{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.ldsp{width:24px;height:24px;border:2px solid var(--bd);border-top-color:var(--b);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}@keyframes spin{to{transform:rotate(360deg)}}
 .hz{background:var(--card);border-radius:8px;padding:10px;box-shadow:var(--sh);border:1px solid var(--bd)}
 .hz .hzn{font-size:12px;font-weight:700;margin-bottom:1px}.hz .hzs{font-size:9px;color:var(--mu);margin-bottom:4px}
 .hz .hzr{display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px}.hz .hzl{color:var(--mu)}
@@ -109,8 +112,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--t);line-height:1.6}
 .docB{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(min-width:901px){.D{padding:20px}.hdr h1{font-size:20px}.bn{display:none}.D{padding-bottom:20px}.cmg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
-@media(max-width:900px){.hdr{flex-direction:column;gap:4px;align-items:flex-start}.g2,.g3{grid-template-columns:1fr}.ga{grid-template-columns:1fr 1fr}.hzg{grid-template-columns:1fr 1fr}.sg,.rkc{grid-template-columns:1fr}.cmg{grid-template-columns:repeat(2,1fr)}.cb canvas{max-height:200px}.fb select,.fb input{font-size:14px;padding:8px}.cp .cpms{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:400px){.cmg{grid-template-columns:1fr 1fr;gap:5px}.cm{padding:6px 8px}.cm .cmp{font-size:13px}.hzg,.ga{grid-template-columns:1fr}}
+@media(max-width:900px){.hdr{flex-direction:column;gap:4px;align-items:flex-start}.g2,.g3{grid-template-columns:1fr}.ga{grid-template-columns:1fr 1fr}.hzg,.hzgg{grid-template-columns:1fr 1fr}.sg,.rkc{grid-template-columns:1fr}.cmg{grid-template-columns:repeat(2,1fr)}.cb canvas{max-height:200px}.fb select,.fb input{font-size:14px;padding:8px}.cp .cpms{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:400px){.cmg{grid-template-columns:1fr 1fr;gap:5px}.cm{padding:6px 8px}.cm .cmp{font-size:13px}.hzg,.hzgg,.ga{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -134,6 +137,7 @@ function togDoc(){const dp=document.getElementById('docPanel');dp.classList.togg
 function tog(id){const b=document.getElementById(id),t=b.previousElementSibling.querySelector('.stg');b.classList.toggle('cl');t.classList.toggle('cl')}
 
 let D=null,MO=[],MOF=[],NAT={},AC={},APS=[];
+let DT={},PINNED=[],LOADING={},CITY_FILES={};
 let selCity='上海',fProv='',fTier='',fSch='',showAllCities=false,TP=12;
 const CI={};function dCI(k){if(CI[k]){CI[k].destroy();delete CI[k]}}function dCIP(p){Object.keys(CI).forEach(k=>{if(k.startsWith(p)){CI[k].destroy();delete CI[k]}})}
 const CC=['#e74c3c','#c0392b','#8e44ad','#2980b9','#e67e22','#1abc9c','#34495e','#9b59b6','#d4a017','#16a085','#27ae60','#00bcd4','#607d8b','#ff5722','#4caf50','#795548','#ff9800','#009688','#673ab7','#03a9f4'];
@@ -141,12 +145,52 @@ let ci=0;function gC(n){if(n==='上海')return'#e74c3c';if(n==='香港')return'#
 
 async function loadData(){
   const el=document.getElementById('ldO');
-  try{const r=await fetch('latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
-  catch(e1){try{const r=await fetch('data/latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}catch(e2){el.innerHTML=`<div style="color:var(--r);text-align:center"><b>数据加载失败</b><br><small>${e1.message}</small></div>`;return}}
-  MOF=D.meta.months;MO=MOF.map(m=>m.slice(2));NAT=D.national;ci=0;
-  for(const[n,c]of Object.entries(D.cities))AC[n]={...c,color:gC(n)};
+  let useSummary=false;
+  try{const r=await fetch('data/summary.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json();useSummary=true}
+  catch(e1){try{const r=await fetch('latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
+  catch(e2){try{const r=await fetch('data/latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
+  catch(e3){el.innerHTML=`<div style="color:var(--r);text-align:center"><b>数据加载失败</b><br><small>${e1.message}</small></div>`;return}}}
+  MOF=D.meta.months;MO=MOF.map(m=>m.slice(2));NAT=D.national;CITY_FILES=D.meta.city_files||{};ci=0;
+  for(const[n,c]of Object.entries(D.cities)){
+    AC[n]={...c,color:gC(n)};
+    if(!useSummary&&c.property_types){DT[n]={property_types:c.property_types,area_rings:c.area_rings,hot_zones:c.hot_zones}}
+  }
   APS=Object.values(AC).map(c=>c.prices);
   renderAll();document.getElementById('bN').style.display='flex';
+  PINNED=JSON.parse(localStorage.getItem('pinnedCities')||'["上海"]');
+  PINNED.forEach(c=>loadCityDetail(c));
+}
+
+function loadCityDetail(name){
+  if(DT[name])return Promise.resolve(DT[name]);
+  if(LOADING[name])return LOADING[name];
+  const key=CITY_FILES[name];
+  if(!key)return Promise.resolve(null);
+  LOADING[name]=fetch(`data/city/${key}.json`)
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+    .then(detail=>{
+      DT[name]=detail;
+      if(AC[name]){AC[name].property_types=detail.property_types;AC[name].area_rings=detail.area_rings;AC[name].hot_zones=detail.hot_zones}
+      delete LOADING[name];
+      if(name===selCity)renderDetail();
+      return detail;
+    }).catch(e=>{console.warn(`Detail load failed: ${name}`,e);delete LOADING[name];return null});
+  return LOADING[name];
+}
+
+function renderDetail(){rPT();rHZ();rAR();rVP()}
+function showDetailLoading(){
+  for(const id of['ptC','hzC','arC','vpG']){
+    const el=document.getElementById(id);
+    if(el)el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)"><div class="ldsp"></div><div style="font-size:11px;margin-top:8px">加载详情数据...</div></div>';
+  }
+}
+
+function togglePin(name){
+  let p=JSON.parse(localStorage.getItem('pinnedCities')||'["上海"]');
+  const i=p.indexOf(name);
+  if(i>=0){p.splice(i,1)}else{if(p.length>=3)return;p.push(name);loadCityDetail(name)}
+  localStorage.setItem('pinnedCities',JSON.stringify(p));PINNED=p;rMG();
 }
 
 // ===== ALGORITHMS =====
@@ -218,14 +262,15 @@ function doSel(){
   const b=document.getElementById('scN');if(b)b.textContent=selCity;
   const r=document.getElementById('rB');if(r)r.style.display=selCity==='上海'?'none':'inline';
   document.querySelectorAll('.cm').forEach(e=>e.classList.toggle('act',e.dataset.city===selCity));
-  rPf();rPT();rHZ();rAR();rSG();rRK();rVP();
+  rPf();rSG();rRK();
+  if(DT[selCity]){renderDetail()}else{showDetailLoading();loadCityDetail(selCity)}
   const p=document.getElementById('s-pf');if(p)setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'start'}),100)}
 function selCi(n){if(!AC[n])return;selCity=n;doSel()}
 function resetC(){selCity='上海';fProv='';fTier='';fSch='';showAllCities=false;
   document.getElementById('fP').value='';document.getElementById('fT').value='';document.getElementById('fS').value='';
   const sel=document.getElementById('fC');sel.innerHTML='<option value="">选择城市</option>';Object.keys(AC).forEach(n=>{sel.innerHTML+=`<option value="${n}">${n}</option>`});
   document.getElementById('fCt').textContent=`${Object.keys(AC).length}城`;rMG();doSel()}
-function setTP(n){TP=n;document.querySelectorAll('.ttg button').forEach(b=>b.classList.toggle('act',parseInt(b.dataset.m)===n));rOV();rMG();rPf();rPT();rHZ();rAR();rVP()}
+function setTP(n){TP=n;document.querySelectorAll('.ttg button').forEach(b=>b.classList.toggle('act',parseInt(b.dataset.m)===n));rOV();rMG();rPf();if(DT[selCity])renderDetail()}
 
 // ===== RENDER ALL =====
 function renderAll(){
@@ -264,12 +309,12 @@ function renderAll(){
 
   <div class="S" id="s-vp"><div class="SH" onclick="tog('bm8')"><div class="ST" id="m8T">📊 量价关系</div><span class="stg">▾</span></div><div class="SB" id="bm8"><div class="ins" id="iM8"></div><div class="g3" id="vpG"></div></div></div>
 
-  <div class="foot">房产趋势看板 v5.2 · 全国${tc}城 · 安居客+中国房价行情+房天下 三源交叉 · 不构成投资建议</div>`;
+  <div class="foot">房产趋势看板 v6.0 · 全国${tc}城 · 安居客+中国房价行情+房天下 三源交叉·板块级下钻 · 不构成投资建议</div>`;
   // Populate doc panel
   document.getElementById('docBody').innerHTML=`<div class="meth">
 <h4>📡 数据来源与更新</h4>
 <div class="ex">
-<b>当前数据来源</b>：安居客(anjuke.com) + 中国房价行情(creprice.cn) + 房天下(fang.com) <b>三源融合</b>，覆盖全国125个城市。安居客提供基准均价（每年8-12月），中国房价行情补全月度趋势（13个月），房天下补全剩余缺口（12-36个月，430+城覆盖）。一线/新一线城市的热门板块细化到区级。<br><br>
+<b>当前数据来源</b>：安居客(anjuke.com) + 中国房价行情(creprice.cn) + 房天下(fang.com) <b>三源融合</b>，覆盖全国125个城市。安居客提供基准均价（每年8-12月），中国房价行情补全月度趋势（13个月），房天下补全剩余缺口（12-36个月，430+城覆盖）。一线/新一线城市支持板块级下钻（36个月月度数据），覆盖250+板块（上海）。<br><br>
 <b>⚠️ 数据说明</b>：价格为二手房挂牌均价（非成交价），以安居客为基准，缺失月份由中国房价行情和房天下的月环比推算补全。成交量为基于价格趋势的估算模型。物业类型拆分基于城市均价的结构化模型。<br><br>
 <b>更新频率</b>：每日自动更新（北京时间16:00），通过GitHub Actions定时任务触发数据刷新并自动部署。
 </div>
@@ -396,13 +441,25 @@ function rPT(){dCIP('pt-');const c=document.getElementById('ptC'),t=document.get
     setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const sb=cpS[0],mb=sp[0];
       CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{label:n,data:sp.map(p=>((p-mb)/mb*100).toFixed(2)),borderColor:ptC2[n]||'#999',borderWidth:2,pointRadius:0,tension:.3,fill:false},{label:`${selCity}均`,data:cpS.map(p=>((p-sb)/sb*100).toFixed(2)),borderColor:'#ccc',borderWidth:1.5,borderDash:[4,2],pointRadius:0,tension:.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,pointStyle:'line',padding:4,font:{size:9}}}},scales:{y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{size:9}},grid:{color:'#f5f5f5'}},x:{ticks:{font:{size:8},maxTicksLimit:maxTk()},grid:{display:false}}}}})},80)})}
 
-function rHZ(){dCIP('hz-');const c=document.getElementById('hzC'),t=document.getElementById('m4T'),ins=document.getElementById('iM4');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d)return;if(t)t.innerHTML=`🔥 ${selCity}·热门板块`;const hz=d.hot_zones||{};const entries=Object.entries(hz);if(!entries.length){c.innerHTML=`<div style="color:var(--mu);font-size:12px;padding:20px;text-align:center">暂无板块数据</div>`;return}
-  const rising=entries.filter(([,v])=>cC(v.prices,3)>0).map(([n])=>n);if(ins)ins.innerHTML=`<span class="it ${rising.length?'tp':'tng'}">${selCity}板块</span><b>${rising.length?rising.join('、'):'暂无'}</b>近3月转正。`;
-  entries.forEach(([n,v],i)=>{const lp=v.prices[v.prices.length-1],m3=cC(v.prices,3),yc=cC(v.prices,12),rs=cRS(v.prices,APS),cid=`hz-${n}`;
+let hzDist='',hzShow=12;
+function rHZ(){dCIP('hz-');hzDist='';hzShow=12;const c=document.getElementById('hzC'),t=document.getElementById('m4T'),ins=document.getElementById('iM4');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d)return;if(t)t.innerHTML=`🔥 ${selCity}·热门板块`;const hz=d.hot_zones||{};const entries=Object.entries(hz);if(!entries.length){c.innerHTML=`<div style="color:var(--mu);font-size:12px;padding:20px;text-align:center">暂无板块数据 — 点击城市后自动加载</div>`;return}
+  const dists=[...new Set(entries.map(([,v])=>v.district).filter(Boolean))];
+  const rising=entries.filter(([,v])=>cC(v.prices,3)>0).map(([n])=>n);
+  if(ins)ins.innerHTML=`<span class="it ${rising.length?'tp':'tng'}">${selCity}板块</span>共${entries.length}个板块，<b>${rising.length}</b>个近3月转正。${dists.length?`覆盖${dists.length}个区。`:''}`;
+  if(dists.length>1){const fb=document.createElement('div');fb.className='hzfb';fb.innerHTML=`<select id="hzDF" onchange="hzDist=this.value;hzShow=12;rHZCards()"><option value="">全部区域 (${entries.length})</option>${dists.map(d=>{const cnt=entries.filter(([,v])=>v.district===d).length;return`<option value="${d}">${d} (${cnt})</option>`}).join('')}</select>`;c.appendChild(fb)}
+  const cc=document.createElement('div');cc.className='hzgg';cc.id='hzGG';c.appendChild(cc);
+  const mb=document.createElement('div');mb.id='hzMB';c.appendChild(mb);
+  rHZCards()}
+function rHZCards(){dCIP('hz-');const cc=document.getElementById('hzGG'),mb=document.getElementById('hzMB');if(!cc)return;cc.innerHTML='';const d=AC[selCity];if(!d)return;const hz=d.hot_zones||{};
+  let entries=Object.entries(hz);if(hzDist)entries=entries.filter(([,v])=>v.district===hzDist);
+  entries.sort((a,b)=>b[1].prices[b[1].prices.length-1]-a[1].prices[a[1].prices.length-1]);
+  const shown=entries.slice(0,hzShow),remain=entries.length-hzShow;
+  shown.forEach(([n,v],i)=>{const lp=v.prices[v.prices.length-1],m3=cC(v.prices,3),yc=cC(v.prices,12),rs=cRS(v.prices,APS),cid=`hz-${n}`;
+    const mo=v.months||MO,pl=v.prices,sl=mo.length>24?mo.slice(-24):mo,sp=pl.length>24?pl.slice(-24):pl;
     const card=document.createElement('div');card.className='hz';
-    card.innerHTML=`<div class="hzn">${n}</div><div class="hzs">${v.sub}</div><div class="hzr"><span class="hzl">均价</span><span style="font-family:var(--mo);font-weight:600">${(lp/10000).toFixed(1)}万</span></div><div class="hzr"><span class="hzl">近3月</span><span class="${vc(m3)}">${fc(m3)}</span></div><div class="hzr"><span class="hzl">近1年</span><span class="${vc(yc)}">${fc(yc)}</span></div><div class="hzr"><span class="hzl">RS</span><span style="font-family:var(--mo);font-weight:600;color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</span></div><div class="hzc"><canvas id="${cid}"></canvas></div>`;c.appendChild(card);
-    const sp=tS(v.prices),sl=tMO();
-    setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const b=sp[0];CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{data:sp.map(p=>((p-b)/b*100).toFixed(2)),borderColor:CC[i%CC.length],borderWidth:1.5,pointRadius:0,tension:.3,fill:{target:'origin',above:'rgba(41,128,185,.08)'}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}})},120)})}
+    card.innerHTML=`<div class="hzn">${n}</div><div class="hzs">${v.sub||''}</div><div class="hzr"><span class="hzl">均价</span><span style="font-family:var(--mo);font-weight:600">${(lp/10000).toFixed(1)}万</span></div><div class="hzr"><span class="hzl">近3月</span><span class="${vc(m3)}">${fc(m3)}</span></div><div class="hzr"><span class="hzl">近1年</span><span class="${vc(yc)}">${fc(yc)}</span></div><div class="hzr"><span class="hzl">RS</span><span style="font-family:var(--mo);font-weight:600;color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</span></div><div class="hzc"><canvas id="${cid}"></canvas></div>`;cc.appendChild(card);
+    setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const b=sp[0];CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl.map(m=>m.length>5?m.slice(2):m),datasets:[{data:sp.map(p=>((p-b)/b*100).toFixed(2)),borderColor:CC[i%CC.length],borderWidth:1.5,pointRadius:0,tension:.3,fill:{target:'origin',above:'rgba(41,128,185,.08)'}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${(sp[c.dataIndex]/10000).toFixed(1)}万 (${c.parsed.y>0?'+':''}${c.parsed.y}%)`}}},scales:{x:{ticks:{font:{size:7},maxTicksLimit:8},grid:{display:false}},y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{size:8}},grid:{color:'#f5f5f5'}}}}})},120)});
+  if(mb){if(remain>0){mb.innerHTML=`<button class="showMore" onclick="hzShow+=12;rHZCards()">展开更多板块 (还有${remain}个) ▾</button>`}else{mb.innerHTML=''}}}
 
 const arC2=['#c0392b','#e74c3c','#e67e22','#f39c12','#95a5a6'];
 function rAR(){dCIP('ar-');const c=document.getElementById('arC'),t=document.getElementById('m5T'),ins=document.getElementById('iM5');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d||!d.area_rings)return;if(t)t.innerHTML=`🎯 ${selCity}·环线/区域`;const ar=d.area_rings,cp=d.prices;const entries=Object.entries(ar);const best=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return r>b.rs?{n,rs:r}:b},{n:'',rs:0});if(ins)ins.innerHTML=`<span class="it ti">${selCity}区域</span><b>${best.n}</b>(RS ${best.rs})最坚挺。由核心向外递次走弱。`;
@@ -413,7 +470,8 @@ function rAR(){dCIP('ar-');const c=document.getElementById('arC'),t=document.get
     setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const sb=cpS[0],mb=sp[0];CI[cid]=new Chart(cv.getContext('2d'),{type:'line',data:{labels:sl,datasets:[{label:n,data:sp.map(p=>((p-mb)/mb*100).toFixed(2)),borderColor:arC2[i%5],borderWidth:2,pointRadius:0,tension:.3,fill:false},{label:`${selCity}均`,data:cpS.map(p=>((p-sb)/sb*100).toFixed(2)),borderColor:'#ccc',borderWidth:1.5,borderDash:[4,2],pointRadius:0,tension:.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,pointStyle:'line',padding:4,font:{size:9}}}},scales:{y:{ticks:{callback:v=>`${v>0?'+':''}${v}%`,font:{size:9}},grid:{color:'#f5f5f5'}},x:{ticks:{font:{size:8},maxTicksLimit:maxTk()},grid:{display:false}}}}})},100)})}
 
 function rSG(){const c=document.getElementById('sgC'),t=document.getElementById('m6T'),ins=document.getElementById('iM6');if(!c)return;c.innerHTML='';if(t)t.innerHTML=`🚦 ${selCity}·止跌回升信号`;const d=AC[selCity];if(!d)return;
-  const tg=[{n:`${selCity}(整体)`,t:'城市',p:d.prices,v:d.volumes}];if(d.property_types)Object.entries(d.property_types).forEach(([n,v])=>tg.push({n,t:'物业',p:v.prices,v:v.volumes}));if(d.hot_zones)Object.entries(d.hot_zones).forEach(([n,v])=>tg.push({n,t:'板块',p:v.prices,v:v.volumes}));
+  const tg=[{n:`${selCity}(整体)`,t:'城市',p:d.prices,v:d.volumes}];if(d.property_types)Object.entries(d.property_types).forEach(([n,v])=>tg.push({n,t:'物业',p:v.prices,v:v.volumes}));
+  if(d.hot_zones){const hze=Object.entries(d.hot_zones);const top=hze.sort((a,b)=>b[1].prices[b[1].prices.length-1]-a[1].prices[a[1].prices.length-1]).slice(0,8);top.forEach(([n,v])=>tg.push({n,t:'板块',p:v.prices,v:v.volumes}))}
   const onC=tg.filter(x=>dSg(x.p,x.v).s.sd).length,stC=tg.filter(x=>dSg(x.p,x.v).s.st).length,rcC=tg.filter(x=>dSg(x.p,x.v).s.rc).length;
   if(ins)ins.innerHTML=`<span class="it ${rcC?'tp':stC>2?'tn':'tng'}">${selCity}</span>${tg.length}个市场：<b>${onC}</b>止跌·<b>${stC}</b>走平·<b>${rcC}</b>回升`;
   tg.forEach(x=>{const{s,d:dt}=dSg(x.p,x.v);const card=document.createElement('div');card.className='sc';
@@ -450,7 +508,7 @@ function vpDx(ps,vs){
 function rVP(){dCIP('vp-');const g=document.getElementById('vpG'),t=document.getElementById('m8T'),ins=document.getElementById('iM8');if(!g)return;g.innerHTML='';if(t)t.innerHTML=`📊 ${selCity}·量价关系`;const d=AC[selCity];if(!d)return;
   const tg=[{n:`${selCity}(整体)`,col:d.color,p:d.prices,v:d.volumes}];
   if(d.property_types){const pt=Object.entries(d.property_types);pt.slice(0,2).forEach(([n,v])=>tg.push({n,col:ptC2[n]||'#999',p:v.prices,v:v.volumes}))}
-  if(d.hot_zones){Object.entries(d.hot_zones).slice(0,2).forEach(([n,v])=>tg.push({n,col:CC[tg.length%CC.length],p:v.prices,v:v.volumes}))}
+  if(d.hot_zones){const hze=Object.entries(d.hot_zones).sort((a,b)=>b[1].prices[b[1].prices.length-1]-a[1].prices[a[1].prices.length-1]);hze.slice(0,2).forEach(([n,v])=>{const ml=Math.min(v.prices.length,v.volumes.length);tg.push({n,col:CC[tg.length%CC.length],p:v.prices.slice(-ml),v:v.volumes.slice(-ml),mo:v.months})})}
   tg.push({n:'全国大盘',col:'#333',p:NAT.prices,v:NAT.volumes});
   // Smart insight with diagnosis
   const mainDx=vpDx(d.prices,d.volumes);
@@ -460,7 +518,7 @@ function rVP(){dCIP('vp-');const g=document.getElementById('vpG'),t=document.get
     const dx=vpDx(x.p,x.v);
     div.innerHTML=`<canvas id="${cid}"></canvas><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding:3px 6px;background:var(--bg);border-radius:6px;font-size:10px"><span class="it ${dx.cls}" style="margin:0">${dx.tag}</span><span style="color:var(--mu)">${dx.tip.slice(0,30)}${dx.tip.length>30?'...':''}</span></div>`;
     g.appendChild(div);
-    const sl=tMO(),ps=tS(x.p),vs=tS(x.v);
+    const sl=x.mo?x.mo.slice(-(TP+1)).map(m=>m.length>5?m.slice(2):m):tMO(),ps=tS(x.p),vs=tS(x.v);
     setTimeout(()=>{const cv=document.getElementById(cid);if(!cv)return;const n=ps.length;
       const vCo=vs.map((_,j)=>j===0?'#bbb':ps[j]>=ps[j-1]?'rgba(45,140,78,.5)':'rgba(192,57,43,.3)');
       CI[cid]=new Chart(cv.getContext('2d'),{type:'bar',data:{labels:sl,datasets:[{type:'bar',label:'成交量',data:vs,backgroundColor:vCo,borderRadius:3,yAxisID:'y1',order:2},{type:'line',label:'价格',data:ps,borderColor:x.col,borderWidth:2,pointRadius:1,tension:.3,fill:false,yAxisID:'y',order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:x.n,font:{size:11,weight:'600'},color:'#333',align:'start'},legend:{labels:{usePointStyle:true,padding:5,font:{size:9}}},tooltip:{callbacks:{label:c=>c.dataset.label==='价格'?`${c.parsed.y.toLocaleString()}元/㎡`:`${c.parsed.y.toLocaleString()}套`}}},scales:{y:{position:'left',ticks:{callback:v=>`${(v/10000).toFixed(1)}万`,font:{size:8}},grid:{color:'#f0f0f0'}},y1:{position:'right',ticks:{callback:v=>v>=1000?`${(v/1000).toFixed(1)}k`:v,font:{size:8}},grid:{display:false}},x:{ticks:{font:{size:8},maxTicksLimit:maxTk()},grid:{display:false}}}}})},150)})}
