@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Real Estate Data Crawler v5.1 — 多源数据版
+"""Real Estate Data Crawler v5.2 — 三源融合版
 数据来源：
 - 安居客(anjuke.com) 城市二手房均价（真实爬取，8-12月）
 - 中国房价行情(creprice.cn) 月度均价+区域+板块（真实爬取，全年12月）
+- 房天下(fang.com) 月度均价+区域（真实爬取，12-36个月）
 - 成交量：基于价格趋势和城市规模的估算模型
 - 物业类型：基于城市均价的结构化拆分模型
 """
@@ -37,6 +38,18 @@ CREPRICE_HEADERS = {
     'X-Requested-With': 'XMLHttpRequest',
 }
 CREPRICE_BASE = 'https://www.creprice.cn'
+
+FANG_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Referer': 'https://fangjia.fang.com/',
+}
+FANG_MOBILE_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
+                  'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+                  'Version/16.0 Mobile/15E148 Safari/604.1',
+}
+FANG_BASE = 'https://fangjia.fang.com'
 
 REQ_DELAY = (0.3, 0.8)
 
@@ -204,6 +217,47 @@ CITY_CODES = {
     "宝鸡": "bj2", "昆山": "ks",
     "三亚": "sanya", "大理": "dali", "北海": "bh", "丽江": "lijiang",
     "西双版纳": "xsbn", "舟山": "zhoushan", "威海": "weihai",
+}
+
+# ===== 房天下城市代码映射 =====
+FANG_CITY_CODES = {
+    "北京": "bj", "上海": "sh", "广州": "gz", "深圳": "sz",
+    "杭州": "hz", "成都": "cd", "南京": "nanjing", "武汉": "wuhan",
+    "重庆": "cq", "天津": "tj", "西安": "xian", "长沙": "cs",
+    "郑州": "zz", "苏州": "suzhou",
+    "厦门": "xm", "合肥": "hf", "福州": "fz", "济南": "jn",
+    "青岛": "qd", "东莞": "dg", "宁波": "nb", "无锡": "wuxi",
+    "大连": "dl", "沈阳": "sy", "昆明": "km", "南昌": "nc",
+    "海口": "hk", "南宁": "nn", "贵阳": "gy", "石家庄": "sjz",
+    "太原": "taiyuan", "长春": "changchun", "哈尔滨": "hrb",
+    "兰州": "lz", "呼和浩特": "nm", "乌鲁木齐": "xj",
+    "西宁": "xn", "银川": "yinchuan", "佛山": "fs", "珠海": "zh",
+    "常州": "cz", "南通": "nt", "嘉兴": "jx", "中山": "zs",
+    "芜湖": "wuhu",
+    "唐山": "ts", "秦皇岛": "qhd", "保定": "bd", "邯郸": "hd",
+    "廊坊": "lf", "包头": "bt", "丹东": "dandong", "锦州": "jinzhou",
+    "鞍山": "anshan", "吉林": "jl", "牡丹江": "mudanjiang",
+    "扬州": "yz", "徐州": "xz", "连云港": "lyg", "淮安": "huaian",
+    "盐城": "yancheng", "镇江": "zhenjiang", "泰州": "taizhou",
+    "宿迁": "sq",
+    "温州": "wz", "金华": "jh", "绍兴": "sx", "台州": "tz",
+    "湖州": "huzhou", "衢州": "quzhou", "丽水": "ls",
+    "蚌埠": "bengbu", "安庆": "anqing", "马鞍山": "mas",
+    "泉州": "qz", "漳州": "zhangzhou", "莆田": "putian", "龙岩": "longyan",
+    "九江": "jiujiang", "赣州": "ganzhou", "上饶": "shangrao",
+    "烟台": "yt", "济宁": "jining", "潍坊": "wf", "临沂": "linyi",
+    "淄博": "zb", "泰安": "taian",
+    "洛阳": "ly", "平顶山": "pingdingshan", "南阳": "nanyang", "新乡": "xx",
+    "宜昌": "yc", "襄阳": "xiangyang", "荆州": "jingzhou",
+    "岳阳": "yueyang", "常德": "changde", "株洲": "zhuzhou", "衡阳": "hengyang",
+    "韶关": "shaoguan", "湛江": "zj", "惠州": "huizhou", "江门": "jm",
+    "汕头": "st", "肇庆": "zhaoqing", "茂名": "maoming",
+    "清远": "qingyuan", "潮州": "chaozhou",
+    "桂林": "guilin", "柳州": "liuzhou",
+    "泸州": "luzhou", "南充": "nanchong", "绵阳": "mianyang", "德阳": "deyang",
+    "遵义": "zunyi", "曲靖": "qujing", "宝鸡": "baoji", "昆山": "ks",
+    "三亚": "sanya", "大理": "dali", "北海": "bh", "丽江": "lijiang",
+    "西双版纳": "xishuangbanna", "舟山": "zhoushan", "威海": "weihai",
 }
 
 # ===== 地理环线映射（一线/新一线城市） =====
@@ -500,6 +554,78 @@ class CrepriceCrawler:
             return {}
 
 
+# ===== 房天下爬虫 =====
+class FangCrawler:
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update(FANG_HEADERS)
+
+    def _delay(self):
+        time.sleep(random.uniform(0.2, 0.5))
+
+    def fetch_city_prices(self, city_code: str) -> Dict[str, int]:
+        try:
+            r = self.session.get(
+                f'{FANG_BASE}/fangjia/common/ajaxtrenddata/{city_code}',
+                params={'Keyword': '4', 'dataType': 'city', 'district': '',
+                        'projcode': '', 'Class': 'defaultnew', 'year': '3'},
+                timeout=15)
+            if r.status_code != 200:
+                return {}
+            text = r.text.strip()
+            parts = text.split('&')
+            pairs = re.findall(r'\[(\d+),(\d+)\]', parts[0])
+            prices = {}
+            for ts_str, price_str in pairs:
+                from datetime import datetime as _dt
+                dt = _dt.fromtimestamp(int(ts_str) / 1000)
+                key = dt.strftime("%Y/%m")
+                prices[key] = int(price_str)
+            return prices
+        except Exception as e:
+            print(f"[WARN] fang.com城市 {city_code}: {e}")
+            return {}
+
+    def fetch_district_data(self, city_code: str) -> Dict[str, dict]:
+        try:
+            s = requests.Session()
+            s.headers.update(FANG_MOBILE_HEADERS)
+            r = s.get(f'https://m.fang.com/fangjia/{city_code}/cityhouseprice.html',
+                      timeout=15)
+            if r.status_code != 200:
+                return {}
+            match = re.search(
+                r"echartsPriceData\s*=\s*'(\[.*?\])'", r.text, re.DOTALL)
+            if not match:
+                match = re.search(
+                    r'echartsPriceData\s*[:=]\s*(\[.*?\])\s*[,;]', r.text, re.DOTALL)
+            if not match:
+                return {}
+            raw = match.group(1)
+            if isinstance(raw, str):
+                data = json.loads(raw)
+            else:
+                data = raw
+            if isinstance(data, str):
+                data = json.loads(data)
+            districts = {}
+            for d in data:
+                if not isinstance(d, dict):
+                    continue
+                name = d.get('districtName', '')
+                price = d.get('averagePrice', 0)
+                if name and price and price > 0:
+                    districts[name] = {
+                        'price': int(price),
+                        'mom': d.get('monthAdd', ''),
+                        'yoy': d.get('yearAdd', ''),
+                    }
+            return districts
+        except Exception as e:
+            print(f"[WARN] fang.com区域 {city_code}: {e}")
+            return {}
+
+
 # ===== 数据处理 =====
 def _prev_month_key(key):
     y, m = key.split('/')
@@ -549,24 +675,30 @@ def interpolate_monthly(sparse_data: Dict[str, int], num_months: int = 25) -> Tu
 
 def merge_monthly_prices(anjuke_sparse: Dict[str, int],
                          creprice_monthly: Dict[str, int],
+                         fang_monthly: Dict[str, int] = None,
                          num_months: int = 25) -> Tuple[List[int], List[str]]:
-    """以安居客为基准价格，用creprice环比变化率补全缺失月份"""
-    if not creprice_monthly:
+    """以安居客为基准价格，用creprice和fang.com环比变化率补全缺失月份"""
+    if not creprice_monthly and not fang_monthly:
         return interpolate_monthly(anjuke_sparse, num_months)
 
     merged = dict(anjuke_sparse)
 
-    all_keys = sorted(set(list(anjuke_sparse.keys()) + list(creprice_monthly.keys())))
+    supplements = [s for s in [creprice_monthly, fang_monthly] if s]
+    all_keys = sorted(set(
+        list(anjuke_sparse.keys()) +
+        [k for s in supplements for k in s]
+    ))
 
-    for key in all_keys:
-        if key in merged:
-            continue
-        if key not in creprice_monthly:
-            continue
-        prev = _prev_month_key(key)
-        if prev in merged and prev in creprice_monthly and creprice_monthly[prev] > 0:
-            mom = creprice_monthly[key] / creprice_monthly[prev]
-            merged[key] = round(merged[prev] * mom)
+    for supplement in supplements:
+        for key in all_keys:
+            if key in merged:
+                continue
+            if key not in supplement:
+                continue
+            prev = _prev_month_key(key)
+            if prev in merged and prev in supplement and supplement[prev] > 0:
+                mom = supplement[key] / supplement[prev]
+                merged[key] = round(merged[prev] * mom)
 
     return interpolate_monthly(merged, num_months)
 
@@ -880,6 +1012,7 @@ def main():
 
     anjuke = AnjukeCrawler()
     creprice = CrepriceCrawler()
+    fang = FangCrawler()
     now = datetime.now()
 
     months = []
@@ -921,27 +1054,42 @@ def main():
             cp_city_prices = creprice.fetch_city_prices(cp_city_code)
             creprice._delay()
 
-        if not raw_prices and not cp_city_prices:
+        # === Step 3: fang.com 城市均价 ===
+        fang_city_code = FANG_CITY_CODES.get(city_name)
+        fang_city_prices = {}
+        if fang_city_code:
+            fang_city_prices = fang.fetch_city_prices(fang_city_code)
+            fang._delay()
+
+        if not raw_prices and not cp_city_prices and not fang_city_prices:
             print(f"  ✗ 无价格数据")
             fail_count += 1
             continue
 
-        # === Step 3: 多源融合 ===
-        if raw_prices and cp_city_prices:
-            interp_prices, _ = merge_monthly_prices(raw_prices, cp_city_prices, NUM_MONTHS)
-            src = f"融合{len(raw_prices)}+{len(cp_city_prices)}点"
-        elif raw_prices:
-            interp_prices, _ = interpolate_monthly(raw_prices, NUM_MONTHS)
-            src = f"基础{len(raw_prices)}点"
+        # === Step 4: 三源融合 ===
+        sources = []
+        if raw_prices:
+            sources.append(f"安居客{len(raw_prices)}")
+        if cp_city_prices:
+            sources.append(f"房价行情{len(cp_city_prices)}")
+        if fang_city_prices:
+            sources.append(f"房天下{len(fang_city_prices)}")
+
+        if raw_prices:
+            interp_prices, _ = merge_monthly_prices(
+                raw_prices, cp_city_prices, fang_city_prices, NUM_MONTHS)
+        elif cp_city_prices:
+            interp_prices, _ = merge_monthly_prices(
+                cp_city_prices, fang_city_prices, None, NUM_MONTHS)
         else:
-            interp_prices, _ = interpolate_monthly(cp_city_prices, NUM_MONTHS)
-            src = f"房价行情{len(cp_city_prices)}点"
+            interp_prices, _ = interpolate_monthly(fang_city_prices, NUM_MONTHS)
+        src = "+".join(sources)
         if not interp_prices or all(p == 0 for p in interp_prices):
             print(f"  ✗ 插值失败")
             fail_count += 1
             continue
 
-        # === Step 4: 区域数据 ===
+        # === Step 5: 区域数据 ===
         anjuke_districts = anjuke.fetch_district_prices(city_name, 2026)
         if not anjuke_districts:
             anjuke_districts = anjuke.fetch_district_prices(city_name, 2025)
@@ -961,6 +1109,14 @@ def main():
                     cp_district_monthly[d_name] = dp
                 creprice._delay(long=True)
 
+        # fang.com 区级数据补充
+        fang_districts = {}
+        if fang_city_code:
+            fang_districts = fang.fetch_district_data(fang_city_code)
+            if fang_districts:
+                print(f"  [FANG] {len(fang_districts)}个区", end=" ", flush=True)
+            fang._delay()
+
         district_prices = dict(anjuke_districts)
         for d_name, d_monthly in cp_district_monthly.items():
             if d_monthly:
@@ -968,8 +1124,12 @@ def main():
                 clean_name = d_name.rstrip('区市县')
                 if clean_name not in district_prices and d_name not in district_prices:
                     district_prices[d_name] = latest
+        for d_name, d_info in fang_districts.items():
+            clean_name = d_name.rstrip('区市县')
+            if clean_name not in district_prices and d_name not in district_prices:
+                district_prices[d_name] = d_info['price']
 
-        # === Step 5: 镇/板块数据（仅一线/新一线） ===
+        # === Step 6: 镇/板块数据（仅一线/新一线） ===
         town_data = None
         if cp_city_code and tier in need_towns and cp_district_map:
             print(f"  [CREPRICE] 爬取板块数据...", flush=True)
@@ -979,11 +1139,16 @@ def main():
                 key=lambda x: district_prices.get(x[0], district_prices.get(x[0].rstrip('区市县'), 0)),
                 reverse=True
             )
-            top_districts = sorted_districts[:min(5, len(sorted_districts))]
+            max_districts = len(sorted_districts) if city_name in ("上海", "北京") else min(5, len(sorted_districts))
+            top_districts = sorted_districts[:max_districts]
 
             for d_name, d_code in top_districts:
                 towns = creprice.discover_towns(cp_city_code, d_code)
                 creprice._delay(long=True)
+                if not towns:
+                    time.sleep(2)
+                    towns = creprice.discover_towns(cp_city_code, d_code)
+                    creprice._delay(long=True)
                 if not towns:
                     continue
                 clean_d = d_name.rstrip('区市县新')
@@ -1001,6 +1166,26 @@ def main():
             if all_towns:
                 town_data = all_towns
                 print(f"  发现{len(all_towns)}个板块")
+
+        # 板块不足时用fang.com区级数据补充
+        if tier in need_towns and (not town_data or len(town_data) < 6) and fang_districts:
+            if not town_data:
+                town_data = {}
+            existing_districts = {v.get('district', '') for v in town_data.values()} if town_data else set()
+            sorted_fd = sorted(fang_districts.items(), key=lambda x: x[1]['price'], reverse=True)
+            for d_name, d_info in sorted_fd:
+                if len(town_data) >= 8:
+                    break
+                clean_d = d_name.rstrip('区市县新')
+                if clean_d in existing_districts:
+                    continue
+                town_data[d_name] = {
+                    'latest_price': d_info['price'],
+                    'district': city_name,
+                    'monthly': {},
+                }
+            if town_data:
+                print(f"  [FANG补充] 板块总计{len(town_data)}个")
 
         # === Step 6: 构建输出 ===
         volumes = estimate_volumes(interp_prices, tier, base_seed=hash(city_name))
@@ -1052,13 +1237,13 @@ def main():
         "meta": {
             "generated_at": now.strftime("%Y-%m-%d %H:%M:%S"),
             "data_source": "multi-source",
-            "data_source_desc": "安居客+中国房价行情 多源交叉爬取 + 成交量(估算模型)",
+            "data_source_desc": "安居客+中国房价行情+房天下 三源交叉爬取 + 成交量(估算模型)",
             "city_count": len(cities_data),
             "months": months,
             "provinces": sorted(set(c["province"] for c in cities_data.values())),
             "tiers": sorted(set(c["tier"] for c in cities_data.values())),
             "notes": {
-                "prices": "安居客(8-12月)+中国房价行情(全年)多源融合，缺失月用环比链补全",
+                "prices": "安居客(8-12月)+中国房价行情(全年)+房天下(12-36月)三源融合，缺失月用环比链补全",
                 "volumes": "基于价格趋势和城市规模的估算模型，非真实成交数据",
                 "property_types": "基于城市均价的结构化拆分，比例参考公开研究",
                 "area_rings": "一线/新一线按地理环线映射，其他城市按价格分档",
