@@ -231,7 +231,7 @@ function setTP(n){TP=n;document.querySelectorAll('.ttg button').forEach(b=>b.cla
 // ===== RENDER ALL =====
 function renderAll(){
   const tc=Object.keys(AC).length,today=new Date().toISOString().slice(0,10);
-  const ds=D.meta.data_source==='anjuke-crawl'?'安居客真实数据':D.meta.data_source==='real'?'真实数据':'模型模拟';
+  const ds=D.meta.data_source==='multi-source'?'多源融合数据':D.meta.data_source==='anjuke-crawl'?'安居客真实数据':D.meta.data_source==='real'?'真实数据':'模型模拟';
   const provs=D.meta.provinces,tiers=D.meta.tiers;
   document.getElementById('app').innerHTML=`
   <div class="hdr"><div><h1>🏠 房产趋势看板</h1><div class="sub">全国${tc}城·量化视角·${ds}·每日更新</div></div><div class="db">${today}</div></div>
@@ -265,13 +265,13 @@ function renderAll(){
 
   <div class="S" id="s-vp"><div class="SH" onclick="tog('bm8')"><div class="ST" id="m8T">📊 量价关系</div><span class="stg">▾</span></div><div class="SB" id="bm8"><div class="ins" id="iM8"></div><div class="g3" id="vpG"></div></div></div>
 
-  <div class="foot">房产趋势看板 v5.0 · 全国${tc}城 · 价格数据来源安居客 · 不构成投资建议</div>`;
+  <div class="foot">房产趋势看板 v5.1 · 全国${tc}城 · 安居客+中国房价行情 多源交叉 · 不构成投资建议</div>`;
   // Populate doc panel
   document.getElementById('docBody').innerHTML=`<div class="meth">
 <h4>📡 数据来源与更新</h4>
 <div class="ex">
-<b>当前数据来源</b>：安居客(anjuke.com)二手房挂牌均价<b>（真实爬取）</b>，覆盖全国124个城市。区域均价同样来自安居客行政区数据。<br><br>
-<b>⚠️ 数据说明</b>：价格数据为安居客平台二手房挂牌均价（非成交价），成交量为基于价格趋势的估算模型。物业类型拆分基于城市均价的结构化模型。<br><br>
+<b>当前数据来源</b>：安居客(anjuke.com) + 中国房价行情(creprice.cn) <b>多源融合</b>，覆盖全国125个城市。安居客提供基准均价（每年8-12月），中国房价行情补全全年月度趋势，通过环比变化率对齐融合。一线/新一线城市的热门板块细化到镇/街道级别。<br><br>
+<b>⚠️ 数据说明</b>：价格为二手房挂牌均价（非成交价），以安居客为基准，缺失月份由中国房价行情月环比推算补全。成交量为基于价格趋势的估算模型。物业类型拆分基于城市均价的结构化模型。<br><br>
 <b>更新频率</b>：每日自动更新（北京时间16:00），通过GitHub Actions定时任务触发数据刷新并自动部署。
 </div>
 
