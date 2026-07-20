@@ -1,0 +1,90 @@
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px 4px;
+}
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+.add-btn {
+  font-size: 13px;
+  color: #2980b9;
+  font-weight: 600;
+  padding: 4px 12px;
+  background: #eaf3fb;
+  border-radius: 14px;
+}
+.toggle-btn {
+  font-size: 12px;
+  color: #2980b9;
+}
+.mt16 { margin-top: 16px; }
+
+/* Fav Cards */
+.empty-fav {
+  padding: 30px;
+  text-align: center;
+}
+.fav-card { padding: 12px 14px; }
+.fav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.fav-info { flex: 1; }
+.fav-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f5f5f5;
+}
+.fav-metric {
+  flex: 1;
+  text-align: center;
+}
+.fav-metric text { display: block; }
+.fav-remove {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f5f5f5;
+  text-align: center;
+}
+
+/* Info Card */
+.info-card { padding: 12px 14px; }
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #f8f8f8;
+}
+.info-row:last-child { border-bottom: none; }
+
+/* Method Card */
+.method-card { padding: 12px 14px; }
+.method-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f8f8f8;
+}
+.method-item:last-child { border-bottom: none; }
+.method-item text { display: block; }
+.method-item .text-muted { margin-top: 2px; line-height: 1.4; }
+
+/* Action Card */
+.action-card { padding: 0; }
+.action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 20px 0 40px;
+}
