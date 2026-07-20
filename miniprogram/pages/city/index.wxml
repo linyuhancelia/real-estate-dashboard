@@ -1,0 +1,288 @@
+<view class="page" wx:if="{{loaded}}">
+  <!-- 城市卡片 -->
+  <view class="card city-profile">
+    <view class="cp-top">
+      <view>
+        <view class="cp-name">{{cityName}}</view>
+        <view class="cp-meta text-muted fs11">{{tier}}·{{province}}</view>
+      </view>
+      <view class="tag tag-{{temp.c}}">{{temp.l}} {{temp.s}}</view>
+    </view>
+
+    <view class="cp-price">
+      <text class="cp-price-num mono fw700">{{priceStr}}</text>
+      <text class="cp-price-unit text-muted fs10">元/㎡</text>
+    </view>
+
+    <view class="cp-metrics">
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">租售比</text>
+        <text class="cp-mv fw600">{{rentYield}}%</text>
+      </view>
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">去化</text>
+        <text class="cp-mv fw600">{{monthsOfSupply}}月</text>
+      </view>
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">溢价率</text>
+        <text class="cp-mv fw600">{{premiumRate}}%</text>
+      </view>
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">带看</text>
+        <text class="cp-mv fw600">{{showingIndex}}</text>
+      </view>
+    </view>
+
+    <view class="cp-changes">
+      <view class="cp-chg" wx:for="{{changes}}" wx:key="label">
+        <text class="cp-chg-label text-muted">{{item.label}}</text>
+        <text class="cp-chg-val mono {{item.cls}}">{{item.val}}</text>
+      </view>
+    </view>
+
+    <!-- 信号灯 -->
+    <view class="cp-signals">
+      <view class="cp-sig">
+        <view class="signal-dot {{signals.sd ? 'signal-on' : 'signal-off'}}"></view>
+        <text class="fs11">止跌</text>
+      </view>
+      <view class="cp-sig">
+        <view class="signal-dot {{signals.st ? 'signal-on' : signals.sd ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs11">走平</text>
+      </view>
+      <view class="cp-sig">
+        <view class="signal-dot {{signals.rc ? 'signal-on' : signals.st ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs11">回升</text>
+      </view>
+      <view class="cp-rs">
+        <text class="cp-rs-val mono fw700" style="color:{{rsColor}}">{{rs}}</text>
+        <text class="fs10 text-muted">RS·跑赢{{rs}}%</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 结论卡 -->
+  <view class="card insight-box">
+    <view class="tag tag-{{judge.cls}}">{{judge.verdict}}</view>
+    <text class="fs12" style="margin-left:8px">{{judge.detail}}</text>
+    <view class="mt8 text-muted fs11">{{judge.hint}}</view>
+  </view>
+
+  <!-- 趋势图 -->
+  <view class="card">
+    <view class="section-title">价格趋势（基期变化率）</view>
+    <view class="chart-box" style="height:220px">
+      <f2-canvas canvasId="cityChart" height="220px" bind:bindinit="onCityChartInit"></f2-canvas>
+    </view>
+  </view>
+
+  <!-- Tab切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'signal' ? 'active' : ''}}" bindtap="switchTab" data-tab="signal">信号灯</view>
+    <view class="tab-item {{activeTab === 'property' ? 'active' : ''}}" bindtap="switchTab" data-tab="property">物业</view>
+    <view class="tab-item {{activeTab === 'hotzone' ? 'active' : ''}}" bindtap="switchTab" data-tab="hotzone">板块</view>
+    <view class="tab-item {{activeTab === 'area' ? 'active' : ''}}" bindtap="switchTab" data-tab="area">区域</view>
+    <view class="tab-item {{activeTab === 'volprice' ? 'active' : ''}}" bindtap="switchTab" data-tab="volprice">量价</view>
+  </view>
+
+  <!-- 信号灯详情 -->
+  <view wx:if="{{activeTab === 'signal'}}">
+    <view class="card signal-summary insight-box">
+      <view class="tag tag-{{sigSummary.cls}}">{{cityName}}信号</view>
+      <text class="fs12"> {{sigSummary.text}}</text>
+      <view class="mt8 fw600 fs12">{{sigSummary.verdict}}</view>
+    </view>
+
+    <view class="card signal-card" wx:for="{{signalTargets}}" wx:key="name">
+      <view class="sc-name">
+        <text class="fw600">{{item.name}}</text>
+        <text class="text-muted fs10"> {{item.type}}</text>
+      </view>
+      <view class="sc-row">
+        <view class="signal-dot {{item.s.sd ? 'signal-on' : 'signal-off'}}"></view>
+        <text class="fs11 fw600">止跌</text>
+        <text class="fs10 text-muted sc-detail">{{item.d.sd}}</text>
+      </view>
+      <view class="sc-row">
+        <view class="signal-dot {{item.s.st ? 'signal-on' : item.s.sd ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs11 fw600">走平</text>
+        <text class="fs10 text-muted sc-detail">{{item.d.st}}</text>
+      </view>
+      <view class="sc-row">
+        <view class="signal-dot {{item.s.rc ? 'signal-on' : item.s.st ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs11 fw600">回升</text>
+        <text class="fs10 text-muted sc-detail">{{item.d.rc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载中（非信号tab） -->
+  <view class="card" wx:if="{{activeTab !== 'signal' && !detailLoaded}}">
+    <view class="loading-center">加载详情数据...</view>
+  </view>
+
+  <!-- M4 物业类型 -->
+  <view wx:if="{{activeTab === 'property' && detailLoaded}}">
+    <view class="card insight-box" wx:if="{{ptInsight}}">
+      <view class="tag tag-{{ptInsight.cls}}">物业分化</view>
+      <text class="fs12"> {{ptInsight.text}}</text>
+    </view>
+    <view class="card pt-card" wx:for="{{ptList}}" wx:key="name">
+      <view class="pt-header">
+        <view>
+          <text class="fw600">{{item.name}}</text>
+          <text class="text-muted fs10"> {{item.desc}}</text>
+        </view>
+        <view class="tag tag-{{item.tempCls}}">{{item.tempLabel}} {{item.tempScore}}</view>
+      </view>
+      <view class="pt-price">
+        <text class="mono fw700">{{item.priceStr}}</text>
+        <text class="text-muted fs10"> 元/㎡</text>
+      </view>
+      <view class="pt-changes">
+        <view class="pt-chg" wx:for="{{item.changes}}" wx:for-item="c" wx:key="label">
+          <text class="fs10 text-muted">{{c.label}}</text>
+          <text class="fs12 mono fw600 {{c.cls}}">{{c.val}}</text>
+        </view>
+      </view>
+      <view class="pt-metrics">
+        <text class="fs10 text-muted">租售比 {{item.rentYield}}%</text>
+        <text class="fs10 text-muted">去化 {{item.monthsOfSupply}}月</text>
+        <text class="fs10 text-muted">溢价率 {{item.premiumRate}}%</text>
+      </view>
+      <view class="pt-signals">
+        <view class="signal-dot {{item.signals.sd ? 'signal-on' : 'signal-off'}}"></view>
+        <text class="fs10">止跌</text>
+        <view class="signal-dot {{item.signals.st ? 'signal-on' : item.signals.sd ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs10">走平</text>
+        <view class="signal-dot {{item.signals.rc ? 'signal-on' : item.signals.st ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs10">回升</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- M5 热门板块 -->
+  <view wx:if="{{activeTab === 'hotzone' && detailLoaded}}">
+    <view class="card insight-box" wx:if="{{hzInsight}}">
+      <view class="tag tag-{{hzInsight.cls}}">板块分化</view>
+      <text class="fs12"> {{hzInsight.text}}</text>
+    </view>
+    <view class="hz-sort-bar">
+      <text class="fs10 text-muted">排序：</text>
+      <text class="hz-sort-btn {{hzSort === 'price' ? 'active' : ''}}" bindtap="switchHzSort" data-sort="price">价格</text>
+      <text class="hz-sort-btn {{hzSort === 'change' ? 'active' : ''}}" bindtap="switchHzSort" data-sort="change">涨幅</text>
+    </view>
+    <view class="card hz-card" wx:for="{{hzList}}" wx:key="name">
+      <view class="hz-header">
+        <view class="hz-rank">{{index + 1}}</view>
+        <view class="hz-info">
+          <text class="fw600 fs13">{{item.name}}</text>
+          <text class="text-muted fs10"> {{item.sub}}</text>
+        </view>
+        <view class="hz-right">
+          <text class="mono fw700 fs13">{{item.priceStr}}</text>
+          <text class="mono fs11 {{item.ycCls}}">{{item.ycStr}}</text>
+        </view>
+      </view>
+      <view class="hz-bar-row">
+        <view class="hz-bar-bg">
+          <view class="hz-bar-fill {{item.m3c >= 0 ? 'bar-up' : 'bar-down'}}" style="width:{{item.barW}}%"></view>
+        </view>
+        <text class="mono fs10 {{item.m3Cls}}">3月{{item.m3Str}}</text>
+      </view>
+      <view class="hz-signals">
+        <view class="signal-dot {{item.signals.sd ? 'signal-on' : 'signal-off'}}"></view>
+        <text class="fs10">止跌</text>
+        <view class="signal-dot {{item.signals.st ? 'signal-on' : item.signals.sd ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs10">走平</text>
+        <view class="signal-dot {{item.signals.rc ? 'signal-on' : item.signals.st ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs10">回升</text>
+        <text class="text-muted fs10 hz-district">{{item.district}}</text>
+      </view>
+    </view>
+    <view class="card" wx:if="{{hzList.length === 0}}">
+      <view class="loading-center text-muted fs12">暂无板块数据</view>
+    </view>
+  </view>
+
+  <!-- M6 区域/环线 -->
+  <view wx:if="{{activeTab === 'area' && detailLoaded}}">
+    <view class="card insight-box" wx:if="{{arInsight}}">
+      <view class="tag tag-{{arInsight.cls}}">区域梯度</view>
+      <text class="fs12"> {{arInsight.text}}</text>
+    </view>
+    <view class="card ar-card" wx:for="{{arList}}" wx:key="name">
+      <view class="ar-header">
+        <text class="fw600 fs13">{{item.name}}</text>
+        <text class="text-muted fs10"> {{item.desc}}</text>
+      </view>
+      <view class="ar-price">
+        <text class="mono fw700 fs15">{{item.priceStr}}</text>
+        <text class="text-muted fs10"> 元/㎡</text>
+        <text class="mono fs11 {{item.ycCls}}" style="margin-left:auto">年{{item.ycStr}}</text>
+      </view>
+      <view class="ar-bar-row">
+        <view class="ar-bar-bg">
+          <view class="ar-bar-fill" style="width:{{item.barW}}%"></view>
+        </view>
+      </view>
+      <view class="ar-metrics">
+        <view class="ar-m">
+          <text class="fs10 text-muted">租售比</text>
+          <text class="fs11 fw600">{{item.rentYield}}%</text>
+        </view>
+        <view class="ar-m">
+          <text class="fs10 text-muted">去化</text>
+          <text class="fs11 fw600">{{item.monthsOfSupply}}月</text>
+        </view>
+        <view class="ar-m">
+          <text class="fs10 text-muted">溢价率</text>
+          <text class="fs11 fw600">{{item.premiumRate}}%</text>
+        </view>
+        <view class="ar-m">
+          <text class="fs10 text-muted">月变化</text>
+          <text class="fs11 fw600 mono {{item.mcCls}}">{{item.mcStr}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="card" wx:if="{{arList.length === 0}}">
+      <view class="loading-center text-muted fs12">暂无区域数据</view>
+    </view>
+  </view>
+
+  <!-- M9 量价关系 -->
+  <view wx:if="{{activeTab === 'volprice' && detailLoaded}}">
+    <view class="card insight-box" wx:if="{{vpDiag}}">
+      <view class="tag tag-{{vpDiag.cls}}">{{vpDiag.label}}</view>
+      <text class="fs12"> {{vpDiag.detail}}</text>
+      <view class="mt8 text-muted fs11">{{vpDiag.hint}}</view>
+    </view>
+    <view class="card">
+      <view class="section-title">量价走势</view>
+      <view class="chart-box" style="height:240px">
+        <f2-canvas canvasId="vpChart" height="240px" bind:bindinit="onVpChartInit"></f2-canvas>
+      </view>
+    </view>
+    <view class="card vp-table">
+      <view class="section-title">近6月量价数据</view>
+      <view class="vp-row vp-header-row">
+        <text class="vp-cell fs10 fw600">月份</text>
+        <text class="vp-cell fs10 fw600">均价</text>
+        <text class="vp-cell fs10 fw600">环比</text>
+        <text class="vp-cell fs10 fw600">成交量</text>
+        <text class="vp-cell fs10 fw600">量变化</text>
+      </view>
+      <view class="vp-row" wx:for="{{vpTable}}" wx:key="month">
+        <text class="vp-cell fs10">{{item.month}}</text>
+        <text class="vp-cell fs10 mono">{{item.price}}</text>
+        <text class="vp-cell fs10 mono {{item.pcCls}}">{{item.pc}}</text>
+        <text class="vp-cell fs10 mono">{{item.vol}}</text>
+        <text class="vp-cell fs10 mono {{item.vcCls}}">{{item.vc}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view class="loading-center" wx:else>
+  <text>加载中...</text>
+</view>
