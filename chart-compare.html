@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>图表库对比：ECharts vs F2/AntV</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://gw.alipayobjects.com/os/lib/antv/f2/3.8.12/dist/f2.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#333;padding:12px}
+h1{font-size:18px;text-align:center;margin:8px 0 16px;color:#222}
+.row{display:flex;gap:12px;margin-bottom:16px}
+@media(max-width:800px){.row{flex-direction:column}}
+.col{flex:1;background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.col h2{font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.col h2 .tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:400}
+.tag.ec{background:#e8f5e9;color:#2e7d32}
+.tag.f2{background:#e3f2fd;color:#1565c0}
+.col .sub{font-size:11px;color:#999;margin-bottom:10px}
+.chart{width:100%;height:220px;position:relative}
+.chart canvas{width:100%!important}
+.vs{text-align:center;font-size:13px;color:#666;padding:6px 0;background:#fafafa;border-radius:8px;margin-bottom:12px}
+.meta{display:flex;gap:16px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+.meta .item{background:#fff;border-radius:8px;padding:10px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
+.meta .item .label{font-size:11px;color:#999}
+.meta .item .val{font-size:18px;font-weight:700;margin-top:2px}
+.meta .item .val.ec{color:#2e7d32}
+.meta .item .val.f2{color:#1565c0}
+.foot{text-align:center;font-size:11px;color:#aaa;margin-top:20px;padding:10px}
+</style>
+</head>
+<body>
+<h1>微信小程序图表库对比</h1>
+
+<div class="meta">
+<div class="item"><div class="label">ECharts 包体</div><div class="val ec">~500KB</div></div>
+<div class="item"><div class="label">F2/AntV 包体</div><div class="val f2">~150KB</div></div>
+<div class="item"><div class="label">小程序包限制</div><div class="val">2MB/包</div></div>
+</div>
+
+<div class="vs">以下每组图表使用相同数据，左侧 ECharts / 右侧 F2，模拟你看板中的 4 种核心图表</div>
+
+<!-- 1. 趋势线图 (M1/M3 城市趋势) -->
+<p style="font-size:13px;font-weight:600;margin:8px 0 6px">1. 趋势线图 — 城市价格走势（M1/M3）</p>
+<div class="row">
+<div class="col">
+  <h2><span class="tag ec">ECharts</span> 多线趋势</h2>
+  <div class="sub">支持：tooltip联动、dataZoom缩放、markLine标注</div>
+  <div class="chart" id="ec1"></div>
+</div>
+<div class="col">
+  <h2><span class="tag f2">F2</span> 多线趋势</h2>
+  <div class="sub">支持：tooltip、手势缩放(pinch)、Guide标注</div>
+  <div class="chart"><canvas id="f2c1"></canvas></div>
+</div>
+</div>
+
+<!-- 2. 量价组合图 (M9) -->
+<p style="font-size:13px;font-weight:600;margin:8px 0 6px">2. 量价组合图 — 柱状+折线双轴（M9）</p>
+<div class="row">
+<div class="col">
+  <h2><span class="tag ec">ECharts</span> 量价关系</h2>
+  <div class="sub">支持：双Y轴、柱状颜色按涨跌、tooltip格式化</div>
+  <div class="chart" id="ec2"></div>
+</div>
+<div class="col">
+  <h2><span class="tag f2">F2</span> 量价关系</h2>
+  <div class="sub">支持：双Y轴、自定义颜色、tooltip</div>
+  <div class="chart"><canvas id="f2c2"></canvas></div>
+</div>
+</div>
+
+<!-- 3. 迷你趋势线 (热门板块表格sparkline) -->
+<p style="font-size:13px;font-weight:600;margin:8px 0 6px">3. 迷你趋势线 — 板块表格Sparkline（M5）</p>
+<div class="row">
+<div class="col">
+  <h2><span class="tag ec">ECharts</span> Sparkline ×6</h2>
+  <div class="sub">每个实例约 200KB 内存，批量渲染较重</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px" id="ecSp"></div>
+</div>
+<div class="col">
+  <h2><span class="tag f2">F2</span> Sparkline ×6</h2>
+  <div class="sub">轻量实例，批量渲染性能优，移动端流畅</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px" id="f2Sp"></div>
+</div>
+</div>
+
+<!-- 4. 分类对比 (M4 物业类型) -->
+<p style="font-size:13px;font-weight:600;margin:8px 0 6px">4. 分类对比图 — 物业类型RS对比（M4/M8）</p>
+<div class="row">
+<div class="col">
+  <h2><span class="tag ec">ECharts</span> 雷达图/柱状图</h2>
+  <div class="sub">支持：雷达图、极坐标、丰富的图表类型</div>
+  <div class="chart" id="ec4"></div>
+</div>
+<div class="col">
+  <h2><span class="tag f2">F2</span> 柱状图</h2>
+  <div class="sub">无雷达图，但柱状/环形/面积图够用</div>
+  <div class="chart"><canvas id="f2c4"></canvas></div>
+</div>
+</div>
+
+<!-- 总结对比表 -->
+<p style="font-size:13px;font-weight:600;margin:16px 0 6px">功能对比总结</p>
+<div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto">
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<thead><tr style="background:#f8f8f8"><th style="padding:8px;text-align:left">维度</th><th style="padding:8px;text-align:center;color:#2e7d32">ECharts</th><th style="padding:8px;text-align:center;color:#1565c0">F2/AntV</th></tr></thead>
+<tbody>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">包体大小</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#c62828">~500KB（占包限制25%）</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">~150KB（占包限制7.5%）</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">图表类型</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center">30+种（雷达/3D/地图/桑基）</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center">8种（线/柱/饼/面积/环/点/漏斗/K线）</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">移动端手势</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center">需配置 dataZoom 组件</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">原生 pinch/pan，移动优先设计</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">批量Sparkline性能</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#c62828">较重，190个板块可能卡顿</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">轻量，适合大量小图</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">小程序官方适配</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">echarts-for-weixin 官方维护</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">@antv/f2 + wx-f2 官方适配</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">tooltip交互</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">丰富，支持联动</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center">够用，样式简洁</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">双Y轴</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">原生支持</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">支持（需手动配置scale）</td></tr>
+<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0">你看板需要的图表</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center">全部覆盖</td><td style="padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32">全部覆盖（用柱状替代雷达）</td></tr>
+<tr style="background:#f8f8f8;font-weight:600"><td style="padding:8px">推荐场景</td><td style="padding:8px;text-align:center">功能优先、包体不紧张</td><td style="padding:8px;text-align:center">性能优先、移动端、包体敏感</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="foot">对比基于 ECharts 5.5 vs F2 3.8 · 两个库渲染效果均为 web 版，小程序版视觉一致</div>
+
+<script>
+// === 模拟数据 ===
+const months = ['24/07','24/08','24/09','24/10','24/11','24/12','25/01','25/02','25/03','25/04','25/05','25/06','25/07'];
+const shanghai = [51200,50800,50500,50100,49800,49600,49500,49600,49800,50100,50500,50900,51300];
+const national = [11200,11100,11000,10900,10850,10800,10750,10720,10700,10710,10730,10750,10780];
+const qiantan = [148000,147000,146500,146000,145800,146200,147000,148000,149500,150200,151000,152000,153500];
+
+const volumes = [3200,2800,3500,4200,3800,3100,2600,3900,4500,4800,5200,4900,5100];
+const priceChg = shanghai.map((p,i)=>i===0?0:p>=shanghai[i-1]?1:-1);
+
+const sparkData = [
+  [100,98,96,95,94,93,93,94,95,97,99,101],
+  [100,99,97,96,94,93,92,91,90,89,88,87],
+  [100,100,99,99,98,98,99,100,101,102,103,105],
+  [100,102,101,99,97,96,95,95,96,97,98,99],
+  [100,98,96,95,93,92,91,91,92,93,95,97],
+  [100,99,98,97,96,95,94,93,93,92,92,91]
+];
+const sparkNames = ['前滩','张江','徐汇滨江','陆家嘴','碧云','大宁'];
+
+const ptNames = ['老破小','次新房','改善大平层','别墅','远郊新房'];
+const ptRS = [42, 68, 75, 55, 28];
+const ptM3 = [-1.2, 0.8, 1.5, -0.3, -2.1];
+
+// baseline change
+function bc(arr){ const b=arr[0]; return arr.map(v=>((v-b)/b*100)); }
+
+// ========== 1. ECharts 趋势线 ==========
+const ec1 = echarts.init(document.getElementById('ec1'));
+ec1.setOption({
+  tooltip:{trigger:'axis',textStyle:{fontSize:11},formatter:function(ps){let s=ps[0].name;ps.forEach(p=>{s+=`<br/>${p.marker}${p.seriesName}: ${p.value>0?'+':''}${p.value.toFixed(1)}%`});return s}},
+  legend:{top:0,textStyle:{fontSize:10},itemWidth:16,itemHeight:2},
+  grid:{left:45,right:15,top:30,bottom:25},
+  xAxis:{data:months,axisLabel:{fontSize:9},axisTick:{show:false}},
+  yAxis:{axisLabel:{fontSize:9,formatter:v=>`${v>0?'+':''}${v}%`},splitLine:{lineStyle:{type:'dashed',color:'#f0f0f0'}}},
+  series:[
+    {name:'上海',type:'line',data:bc(shanghai).map(v=>+v.toFixed(1)),lineStyle:{width:2.5},itemStyle:{color:'#e74c3c'},symbol:'none',smooth:.3},
+    {name:'全国',type:'line',data:bc(national).map(v=>+v.toFixed(1)),lineStyle:{width:1.5,type:'dashed'},itemStyle:{color:'#999'},symbol:'none',smooth:.3},
+    {name:'前滩',type:'line',data:bc(qiantan).map(v=>+v.toFixed(1)),lineStyle:{width:2},itemStyle:{color:'#2980b9'},symbol:'none',smooth:.3}
+  ]
+});
+
+// ========== 1. F2 趋势线 ==========
+(function(){
+  const data = [];
+  months.forEach((m,i)=>{
+    data.push({month:m,value:+bc(shanghai)[i].toFixed(1),type:'上海'});
+    data.push({month:m,value:+bc(national)[i].toFixed(1),type:'全国'});
+    data.push({month:m,value:+bc(qiantan)[i].toFixed(1),type:'前滩'});
+  });
+  const chart = new F2.Chart({id:'f2c1',pixelRatio:window.devicePixelRatio,padding:[30,15,25,40]});
+  chart.source(data,{value:{formatter:v=>`${v>0?'+':''}${v.toFixed(1)}%`}});
+  chart.scale('month',{range:[0,1]});
+  chart.scale('value',{nice:true});
+  chart.axis('month',{label:{fontSize:9}});
+  chart.axis('value',{label:{fontSize:9,formatter:v=>`${v>0?'+':''}${v}%`},grid:{lineDash:[3,3]}});
+  chart.legend({position:'top',fontSize:10,itemWidth:12});
+  chart.tooltip({showCrosshairs:true});
+  const colorMap = {'上海':'#e74c3c','全国':'#999','前滩':'#2980b9'};
+  chart.line().position('month*value').color('type',t=>colorMap[t]).shape('smooth').style('type',t=>({lineWidth:t==='上海'?2.5:t==='前滩'?2:1.5,lineDash:t==='全国'?[4,2]:null}));
+  chart.render();
+})();
+
+// ========== 2. ECharts 量价组合 ==========
+const ec2 = echarts.init(document.getElementById('ec2'));
+ec2.setOption({
+  tooltip:{trigger:'axis',textStyle:{fontSize:11}},
+  legend:{top:0,textStyle:{fontSize:10},itemWidth:14,itemHeight:2},
+  grid:{left:50,right:50,top:30,bottom:25},
+  xAxis:{data:months,axisLabel:{fontSize:9}},
+  yAxis:[
+    {name:'价格',nameTextStyle:{fontSize:9},position:'left',axisLabel:{fontSize:9,formatter:v=>`${(v/10000).toFixed(1)}万`},splitLine:{lineStyle:{type:'dashed',color:'#f0f0f0'}}},
+    {name:'成交量',nameTextStyle:{fontSize:9},position:'right',axisLabel:{fontSize:9},splitLine:{show:false}}
+  ],
+  series:[
+    {name:'成交量',type:'bar',yAxisIndex:1,data:volumes,barWidth:'40%',
+      itemStyle:{color:function(p){return priceChg[p.dataIndex]>=0?'rgba(45,140,78,.45)':'rgba(192,57,43,.35)'},borderRadius:[3,3,0,0]}},
+    {name:'价格',type:'line',data:shanghai,yAxisIndex:0,lineStyle:{width:2.5,color:'#2980b9'},symbol:'circle',symbolSize:4,itemStyle:{color:'#2980b9'},smooth:.3}
+  ]
+});
+
+// ========== 2. F2 量价组合 ==========
+(function(){
+  const data = months.map((m,i)=>({month:m,price:shanghai[i],volume:volumes[i],up:priceChg[i]>=0}));
+  const chart = new F2.Chart({id:'f2c2',pixelRatio:window.devicePixelRatio,padding:[30,45,25,50]});
+  chart.source(data);
+  chart.scale('price',{min:49000,max:52000,formatter:v=>`${(v/10000).toFixed(1)}万`});
+  chart.scale('volume',{min:0,max:6000});
+  chart.axis('month',{label:{fontSize:9}});
+  chart.axis('price',{label:{fontSize:9},grid:{lineDash:[3,3]}});
+  chart.axis('volume',{position:'right',label:{fontSize:9},grid:null});
+  chart.legend(false);
+  chart.tooltip({showCrosshairs:true});
+  chart.interval().position('month*volume').color('up',u=>u?'rgba(45,140,78,.45)':'rgba(192,57,43,.35)').style({radius:[3,3,0,0]});
+  chart.line().position('month*price').color('#2980b9').style({lineWidth:2.5}).shape('smooth');
+  chart.point().position('month*price').color('#2980b9').size(2);
+  chart.render();
+})();
+
+// ========== 3. ECharts Sparklines ==========
+(function(){
+  const container = document.getElementById('ecSp');
+  sparkData.forEach((sp,idx)=>{
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:6px;width:48%;padding:4px 8px;background:#fafafa;border-radius:6px';
+    const nameSpan = document.createElement('span');
+    nameSpan.style.cssText = 'font-size:11px;width:52px;color:#333';
+    nameSpan.textContent = sparkNames[idx];
+    const chartDiv = document.createElement('div');
+    chartDiv.style.cssText = 'width:80px;height:24px';
+    div.appendChild(nameSpan);
+    div.appendChild(chartDiv);
+    container.appendChild(div);
+    const c = echarts.init(chartDiv);
+    const up = sp[sp.length-1] >= sp[sp.length-4];
+    c.setOption({
+      grid:{left:0,right:0,top:0,bottom:0},
+      xAxis:{show:false,data:sp.map(()=>'')},
+      yAxis:{show:false,min:Math.min(...sp)-2,max:Math.max(...sp)+2},
+      series:[{type:'line',data:sp,symbol:'none',lineStyle:{width:1.5,color:up?'#2d8c4e':'#c0392b'},smooth:.4,areaStyle:{color:up?'rgba(45,140,78,.08)':'rgba(192,57,43,.05)'}}],
+      animation:false
+    });
+  });
+})();
+
+// ========== 3. F2 Sparklines ==========
+(function(){
+  const container = document.getElementById('f2Sp');
+  sparkData.forEach((sp,idx)=>{
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:6px;width:48%;padding:4px 8px;background:#fafafa;border-radius:6px';
+    const nameSpan = document.createElement('span');
+    nameSpan.style.cssText = 'font-size:11px;width:52px;color:#333';
+    nameSpan.textContent = sparkNames[idx];
+    const canvas = document.createElement('canvas');
+    canvas.id = 'f2sp'+idx;
+    canvas.style.cssText = 'width:80px;height:24px';
+    div.appendChild(nameSpan);
+    div.appendChild(canvas);
+    container.appendChild(div);
+    const data = sp.map((v,i)=>({x:i,y:v}));
+    const up = sp[sp.length-1] >= sp[sp.length-4];
+    const c = new F2.Chart({id:'f2sp'+idx,pixelRatio:window.devicePixelRatio,padding:[2,2,2,2]});
+    c.source(data,{x:{range:[0,1]},y:{min:Math.min(...sp)-2,max:Math.max(...sp)+2}});
+    c.axis(false);
+    c.legend(false);
+    c.tooltip(false);
+    c.area().position('x*y').color(up?'rgba(45,140,78,.08)':'rgba(192,57,43,.05)').shape('smooth');
+    c.line().position('x*y').color(up?'#2d8c4e':'#c0392b').shape('smooth').style({lineWidth:1.5});
+    c.render();
+  });
+})();
+
+// ========== 4. ECharts 雷达图 ==========
+const ec4 = echarts.init(document.getElementById('ec4'));
+ec4.setOption({
+  tooltip:{textStyle:{fontSize:11}},
+  radar:{indicator:ptNames.map(n=>({name:n,max:100})),radius:'65%',name:{fontSize:10},splitArea:{areaStyle:{color:['#fff','#f8f8f8']}},axisLine:{lineStyle:{color:'#ddd'}},splitLine:{lineStyle:{color:'#eee'}}},
+  series:[{type:'radar',data:[{value:ptRS,name:'RS相对强度',lineStyle:{color:'#2980b9',width:2},areaStyle:{color:'rgba(41,128,179,.15)'},itemStyle:{color:'#2980b9'}}]}]
+});
+
+// ========== 4. F2 柱状图（替代雷达） ==========
+(function(){
+  const data = ptNames.map((n,i)=>({name:n,rs:ptRS[i],m3:ptM3[i]}));
+  const chart = new F2.Chart({id:'f2c4',pixelRatio:window.devicePixelRatio,padding:[20,15,40,45]});
+  chart.source(data,{rs:{min:0,max:100}});
+  chart.axis('name',{label:{fontSize:9,rotate:-0.3}});
+  chart.axis('rs',{label:{fontSize:9},grid:{lineDash:[3,3]}});
+  chart.legend(false);
+  chart.tooltip({showCrosshairs:false});
+  chart.interval().position('name*rs').color('rs',rs=>{
+    if(rs>=60)return'#2d8c4e';if(rs>=40)return'#f39c12';return'#c0392b';
+  }).style({radius:[4,4,0,0]});
+  chart.guide().line({start:['min',50],end:['max',50],style:{stroke:'#999',lineDash:[3,3],lineWidth:1}});
+  chart.guide().text({position:['0%','48%'],content:'RS=50 基准线',style:{fill:'#999',fontSize:9,textAlign:'start'}});
+  chart.render();
+})();
+
+window.addEventListener('resize',()=>{ec1.resize();ec2.resize();ec4.resize()});
+</script>
+</body>
+</html>
