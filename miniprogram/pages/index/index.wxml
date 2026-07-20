@@ -1,0 +1,63 @@
+<view class="page" wx:if="{{loaded}}">
+  <!-- M1 大盘概览 -->
+  <view class="card overview-card">
+    <view class="ov-header">
+      <view class="tag tag-{{natJudge.cls}}">大盘·{{natJudge.verdict}}</view>
+      <text class="ov-update text-muted fs10">{{updateTime}}</text>
+    </view>
+    <view class="ov-body">
+      <text>全国：<text class="fw600">{{natJudge.verdict}}</text>（{{natJudge.detail}}）</text>
+      <text>\n上海：<text class="fw600">{{shJudge.verdict}}</text>，{{shVsNat}}</text>
+    </view>
+    <view class="ov-hint text-muted fs10">{{shJudge.hint}}</view>
+
+    <!-- 趋势图 -->
+    <view class="chart-box" style="height:200px;margin-top:8px">
+      <f2-canvas canvasId="ovChart" height="200px" bind:bindinit="onOvChartInit"></f2-canvas>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <picker mode="selector" range="{{provinces}}" bindchange="onProvChange">
+      <view class="filter-btn {{fProv ? 'active' : ''}}">{{fProv || '省份'}} ▾</view>
+    </picker>
+    <picker mode="selector" range="{{tiers}}" bindchange="onTierChange">
+      <view class="filter-btn {{fTier ? 'active' : ''}}">{{fTier || '类别'}} ▾</view>
+    </picker>
+    <input class="filter-search" placeholder="搜索城市" bindinput="onSearch" value="{{fSch}}" />
+    <view class="filter-btn reset" wx:if="{{fProv || fTier || fSch}}" bindtap="resetFilter">重置</view>
+  </view>
+
+  <!-- M2 城市列表 -->
+  <scroll-view scroll-y class="city-list" enable-back-to-top>
+    <view
+      class="city-item"
+      wx:for="{{filteredCities}}"
+      wx:key="name"
+      bindtap="onCityTap"
+      data-name="{{item.name}}"
+    >
+      <view class="ci-left">
+        <view class="ci-name">{{item.name}}</view>
+        <view class="ci-meta text-muted fs10">{{item.tier}}·{{item.province}}</view>
+      </view>
+      <view class="ci-center">
+        <view class="ci-price mono fw600">{{item.priceStr}}</view>
+        <view class="ci-change mono {{item.ycClass}}">{{item.ycStr}}</view>
+      </view>
+      <view class="ci-right">
+        <view class="tag tag-{{item.tempClass}}">{{item.tempLabel}} {{item.tempScore}}</view>
+      </view>
+    </view>
+
+    <view class="show-more" wx:if="{{!showAll && totalCount > filteredCities.length}}" bindtap="showAllCities">
+      展开全部 {{totalCount}} 城 ▾
+    </view>
+  </scroll-view>
+</view>
+
+<!-- Loading -->
+<view class="loading-center" wx:else>
+  <text>加载中...</text>
+</view>
