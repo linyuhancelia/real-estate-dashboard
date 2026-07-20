@@ -32,7 +32,7 @@
       </view>
       <view class="fav-metric">
         <text class="fs10 text-muted">判断</text>
-        <text class="fw600 fs11 tag-{{item.verdictCls}}">{{item.verdict}}</text>
+        <text class="fw600 fs11 tag tag-{{item.verdictCls}}">{{item.verdict}}</text>
       </view>
     </view>
     <view class="fav-remove" bindtap="removeFav" data-name="{{item.name}}">
