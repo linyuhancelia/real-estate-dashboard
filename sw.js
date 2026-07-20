@@ -1,4 +1,4 @@
-const CACHE = 'retracker-v6';
+const CACHE = 'retracker-v7';
 const ASSETS = ['./index.html', './manifest.json', './icon-192.png'];
 
 self.addEventListener('install', e => {
@@ -12,7 +12,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const u = e.request.url;
-  if (u.includes('summary.json') || u.includes('latest.json') || u.match(/\/city\/\w+\.json/)) {
+  if (u.includes('latest.json')) {
     e.respondWith(fetch(e.request).then(r => {
       const rc = r.clone();
       caches.open(CACHE).then(c => c.put(e.request, rc));
