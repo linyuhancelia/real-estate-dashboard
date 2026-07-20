@@ -206,6 +206,26 @@ function dSg(p,v){
   return{s,d}
 }
 
+function mktJudge(p,v){
+  const n=p.length;if(n<6)return{verdict:'数据不足',conf:0,cls:'ti',detail:'',hint:''};
+  const m1=cC(p,1),m3=cC(p,3),m6=cC(p,Math.min(6,n-1)),y1=cC(p,Math.min(12,n-1));
+  const mo=cMo(p),{s:sg}=dSg(p,v),dx=vpDx(p,v);
+  let streak=0,dir=p[n-1]>=p[n-2]?1:-1;
+  for(let i=n-1;i>0;i--){if((p[i]>=p[i-1]?1:-1)===dir)streak++;else break}
+  if(sg.rc)return{verdict:'趋势性回暖',conf:5,cls:'tp',detail:`量价齐升已确认，连续正涨${streak}月`,hint:'可积极看房'};
+  if(sg.st&&mo>0.05)return{verdict:'止稳向好',conf:4,cls:'tp',detail:`价格走平+动量转正(${mo.toFixed(2)}%)，有转折迹象`,hint:'可开始关注'};
+  if(sg.st)return{verdict:'底部盘整',conf:3,cls:'tn',detail:'波动极小，等待方向突破',hint:'继续观察1-2月'};
+  if(sg.sd&&m1>0)return{verdict:'止跌反弹',conf:3,cls:'tn',detail:'跌幅收窄+最新月转正，需连续确认',hint:'关注下月能否持续'};
+  if(sg.sd)return{verdict:'止跌企稳',conf:2,cls:'tn',detail:'跌幅在收窄，尚未转正',hint:'底部信号初现，继续观望'};
+  if(m3>0&&m6<-1)return{verdict:'技术性反弹',conf:2,cls:'tn',detail:`短期转正但中期仍跌${m6.toFixed(1)}%，可能超跌反弹`,hint:'不宜追涨，等待确认'};
+  if(Math.abs(m3)<.5&&Math.abs(m1)<.3)return{verdict:'窄幅震荡',conf:2,cls:'ti',detail:`近3月波动仅${m3.toFixed(1)}%，方向不明`,hint:'观望等待信号'};
+  if(m3<0&&mo>0)return{verdict:'跌幅收窄',conf:2,cls:'tn',detail:`仍在下跌但速度放缓(动量+${mo.toFixed(2)}%)`,hint:'下行减速，留意拐点'};
+  if(m3<0&&mo<=0)return{verdict:'持续下行',conf:1,cls:'tng',detail:`近3月${m3.toFixed(1)}%，跌势未减`,hint:'建议等待止跌信号'};
+  if(m3>0&&dx.tag==='量价齐升')return{verdict:'健康上行',conf:4,cls:'tp',detail:'涨价有成交支撑，上涨可持续',hint:'较好的入场时机'};
+  if(m3>0&&mo>0)return{verdict:'温和上行',conf:3,cls:'tp',detail:`近3月+${m3.toFixed(1)}%，动量仍在加速`,hint:'趋势向好但需确认量能'};
+  return{verdict:'方向不明',conf:1,cls:'ti',detail:'多空交织，暂无明确趋势',hint:'观望'}
+}
+
 function fc(v){return`${v>=0?'+':''}${v.toFixed(1)}%`}
 function fc2(v){return`${v>=0?'+':''}${v.toFixed(2)}%`}
 function vc(v){return v>=.05?'vu':v<=-.05?'vd':'vu'}
@@ -287,7 +307,7 @@ function renderAll(){
 
   <div class="S" id="s-vp"><div class="SH" onclick="tog('bm8')"><div class="ST" id="m8T">📊 量价关系</div><span class="stg">▾</span></div><div class="SB" id="bm8"><div class="ins" id="iM8"></div><div class="g3" id="vpG"></div></div></div>
 
-  <div class="foot">房产趋势看板 v7.0 · 全国${tc}城 · 三源交叉·板块级下钻·每周更新 · 不构成投资建议</div>`;
+  <div class="foot">房产趋势看板 v7.1 · 全国${tc}城 · 三源交叉·板块级下钻·结论解读·每周更新 · 不构成投资建议</div>`;
   // Populate doc panel
   document.getElementById('docBody').innerHTML=`<div class="meth">
 <h4>📡 数据来源与更新</h4>
@@ -362,7 +382,8 @@ function renderAll(){
 // M1
 function rOV(){dCI('ov');const sh=AC['上海'],t1=getTop1();const nyc=cC(NAT.prices,12),syc=cC(sh.prices,12);
   const el=document.getElementById('iM1');
-  if(el)el.innerHTML=`<span class="it ${syc>nyc?'tp':'tng'}">大盘</span><b>全国</b>${fc(nyc)}，<b>上海</b>${fc(syc)}，${syc>nyc?'跑赢':'跑输'}${Math.abs(syc-nyc).toFixed(1)}pp。Top1异动：<b>${t1.n}</b>(动量${fc2(t1.raw)})，${t1.raw>0?'市场在好转':'市场在转弱'}。`;
+  const nj=mktJudge(NAT.prices,NAT.volumes),sj=mktJudge(sh.prices,sh.volumes);
+  if(el)el.innerHTML=`<span class="it ${nj.cls}">大盘·${nj.verdict}</span>全国：<b>${nj.verdict}</b>(${nj.detail})。上海：<b>${sj.verdict}</b>，${syc>nyc?'跑赢':'跑输'}全国${Math.abs(syc-nyc).toFixed(1)}pp。<br>短期风向：<b>${t1.n}</b>动量异动(${fc2(t1.raw)})，${t1.raw>0?'局部在好转':'局部在转弱'}。<span style="color:var(--mu);font-size:10px">| ${sj.hint}</span>`;
   const cv=document.getElementById('ovC');if(!cv)return;
   const mo=tMO(),sp=tS(sh.prices),np=tS(NAT.prices),tp=tS(t1.prices);
   const nb=np[0],sb=sp[0],tb=tp[0];
@@ -409,7 +430,10 @@ const ptC2={'老破小':'#e67e22','次新房':'#27ae60','改善大平层':'#2980
 function rPT(){dCIP('pt-');const c=document.getElementById('ptC'),t=document.getElementById('m3T'),ins=document.getElementById('iM3');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d||!d.property_types)return;if(t)t.innerHTML=`🏢 ${selCity}·物业类型`;
   const pt=d.property_types,cp=d.prices,entries=Object.entries(pt);
   const best=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return r>b.rs?{n,rs:r}:b},{n:'',rs:0});
-  if(ins)ins.innerHTML=`<span class="it tn">${selCity}物业</span><b>${best.n}</b>(RS ${best.rs})最抗跌。5种物业分化明显。`;
+  const worst=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return(!b.n||r<b.rs)?{n,rs:r}:b},{n:'',rs:100});
+  const cj=mktJudge(cp,d.volumes),bj=mktJudge(entries.find(([n])=>n===best.n)[1].prices,entries.find(([n])=>n===best.n)[1].volumes);
+  const rsGap=best.rs-worst.rs,divTxt=rsGap>40?'分化剧烈':rsGap>20?'分化明显':'分化较小';
+  if(ins)ins.innerHTML=`<span class="it ${cj.cls}">${selCity}物业·${cj.verdict}</span>整体<b>${cj.verdict}</b>。<b>${best.n}</b>(RS ${best.rs})最抗跌，<b>${worst.n}</b>(RS ${worst.rs})最弱，${divTxt}。${bj.conf>=3?`<b>${best.n}</b>已现${bj.verdict}信号。`:''}<span style="color:var(--mu);font-size:10px">| ${cj.hint}</span>`;
   entries.forEach(([n,v])=>{const lp=v.prices[v.prices.length-1],tp=cTp(v.prices,v.volumes),rs=cRS(v.prices,APS),dev=(cC(v.prices,12)-cC(cp,12)).toFixed(1),cid=`pt-${n}`;
     const card=document.createElement('div');card.className='ac';
     card.innerHTML=`<div class="ach"><span class="acn">${n}</span><span class="tb ${tp.c}">${tp.l}</span></div><div class="acd">${v.desc}</div>
@@ -424,7 +448,12 @@ function rHZ(){dCIP('hz-');hzDist='';hzShow=20;hzSort='price';const c=document.g
   const dists=[...new Set(entries.map(([,v])=>v.district).filter(Boolean))];
   const rising=entries.filter(([,v])=>cC(v.prices,3)>0).map(([n])=>n);
   const hasBoards=entries.some(([,v])=>v.months&&v.months.length>25);
-  if(ins)ins.innerHTML=`<span class="it ${rising.length?'tp':'tng'}">${selCity}板块</span>共${entries.length}个${hasBoards?'板块':'区域'}，<b>${rising.length}</b>个近3月转正。${dists.length>1?`覆盖${dists.length}个区。`:''}`;
+  const rPct=entries.length?(rising.length/entries.length*100).toFixed(0):0;
+  const sorted3=entries.map(([n,v])=>({n,m3:cC(v.prices,3)})).sort((a,b)=>b.m3-a.m3);
+  const top1=sorted3[0],bot1=sorted3[sorted3.length-1];
+  const hzVerdict=rPct>50?'多数回暖':rPct>30?'局部回暖':rPct>15?'零星反弹':'整体仍在调整';
+  const hzCls=rPct>50?'tp':rPct>15?'tn':'tng';
+  if(ins)ins.innerHTML=`<span class="it ${hzCls}">${selCity}板块·${hzVerdict}</span>共${entries.length}个${hasBoards?'板块':'区域'}，<b>${rising.length}</b>个(${rPct}%)近3月转正，${hzVerdict}。领涨：<b>${top1.n}</b>(${fc(top1.m3)})，领跌：<b>${bot1.n}</b>(${fc(bot1.m3)})。${dists.length>1?`覆盖${dists.length}个区。`:''}`;
   let fb='<div class="hzfb">';
   if(dists.length>1)fb+=`<select id="hzDF" onchange="hzDist=this.value;hzShow=20;rHZCards()"><option value="">全部区域 (${entries.length})</option>${dists.map(d=>{const cnt=entries.filter(([,v])=>v.district===d).length;return`<option value="${d}">${d} (${cnt})</option>`}).join('')}</select>`;
   fb+=`<select onchange="hzSort=this.value;rHZCards()"><option value="price">按均价</option><option value="m3">按近3月</option><option value="rs">按RS</option></select></div>`;
@@ -468,7 +497,7 @@ function hzExpand(name){dCIP('hz-ch-');const ch=document.getElementById('hzCH');
       scales:{y:{position:'left',ticks:{callback:v=>`${(v/10000).toFixed(1)}万`,font:{size:8}},grid:{color:'#f0f0f0'}},y1:{position:'right',display:vl.length>0,ticks:{font:{size:8}},grid:{display:false}},x:{ticks:{font:{size:7},maxTicksLimit:12},grid:{display:false}}}}})},80)}
 
 const arC2=['#c0392b','#e74c3c','#e67e22','#f39c12','#95a5a6'];
-function rAR(){dCIP('ar-');const c=document.getElementById('arC'),t=document.getElementById('m5T'),ins=document.getElementById('iM5');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d||!d.area_rings)return;if(t)t.innerHTML=`🎯 ${selCity}·环线/区域`;const ar=d.area_rings,cp=d.prices;const entries=Object.entries(ar);const best=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return r>b.rs?{n,rs:r}:b},{n:'',rs:0});if(ins)ins.innerHTML=`<span class="it ti">${selCity}区域</span><b>${best.n}</b>(RS ${best.rs})最坚挺。由核心向外递次走弱。`;
+function rAR(){dCIP('ar-');const c=document.getElementById('arC'),t=document.getElementById('m5T'),ins=document.getElementById('iM5');if(!c)return;c.innerHTML='';const d=AC[selCity];if(!d||!d.area_rings)return;if(t)t.innerHTML=`🎯 ${selCity}·环线/区域`;const ar=d.area_rings,cp=d.prices;const entries=Object.entries(ar);const best=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return r>b.rs?{n,rs:r,prices:v.prices,volumes:v.volumes}:b},{n:'',rs:0,prices:[],volumes:[]});const worst=entries.reduce((b,[n,v])=>{const r=cRS(v.prices,APS);return(!b.n||r<b.rs)?{n,rs:r,prices:v.prices,volumes:v.volumes}:b},{n:'',rs:100,prices:[],volumes:[]});const bj=mktJudge(best.prices,best.volumes),wj=mktJudge(worst.prices,worst.volumes);const arJ=mktJudge(cp,d.volumes);if(ins)ins.innerHTML=`<span class="it ${arJ.cls}">${selCity}区域·${arJ.verdict}</span><b>${best.n}</b>(RS ${best.rs})最坚挺：${bj.verdict}。<b>${worst.n}</b>(RS ${worst.rs})承压最大：${wj.verdict}。${bj.verdict!==wj.verdict?`梯度分化：核心${bj.verdict}，外围${wj.verdict}。`:'各区域同步。'}<span style="color:var(--mu);font-size:10px">| ${arJ.hint}</span>`;
   entries.forEach(([n,v],i)=>{const lp=v.prices[v.prices.length-1],tp=cTp(v.prices,v.volumes),rs=cRS(v.prices,APS),cid=`ar-${n}`;
     const card=document.createElement('div');card.className='ac';
     card.innerHTML=`<div class="ach"><span class="acn">${n}</span><span class="tb ${tp.c}">${tp.l}</span></div><div class="acd">${v.desc}</div><div class="acm"><div class="am"><span class="aml">均价</span><span class="amv">${(lp/10000).toFixed(1)}<small style="font-size:9px">万</small></span></div><div class="am"><span class="aml">RS</span><span class="amv" style="color:${rs>=60?'var(--g)':rs>=40?'var(--warm)':'var(--r)'}">${rs}</span></div><div class="am"><span class="aml">去化</span><span class="amv">${v.monthsOfSupply}<small style="font-size:9px">月</small></span></div><div class="am"><span class="aml">溢价率</span><span class="amv">${(v.premiumRate*100).toFixed(0)}%</span></div></div><div class="acc"><canvas id="${cid}"></canvas></div>`;c.appendChild(card);
@@ -479,7 +508,10 @@ function rSG(){const c=document.getElementById('sgC'),t=document.getElementById(
   const tg=[{n:`${selCity}(整体)`,t:'城市',p:d.prices,v:d.volumes}];if(d.property_types)Object.entries(d.property_types).forEach(([n,v])=>tg.push({n,t:'物业',p:v.prices,v:v.volumes}));
   if(d.hot_zones){const hze=Object.entries(d.hot_zones);const top=hze.sort((a,b)=>b[1].prices[b[1].prices.length-1]-a[1].prices[a[1].prices.length-1]).slice(0,8);top.forEach(([n,v])=>tg.push({n,t:'板块',p:v.prices,v:v.volumes}))}
   const onC=tg.filter(x=>dSg(x.p,x.v).s.sd).length,stC=tg.filter(x=>dSg(x.p,x.v).s.st).length,rcC=tg.filter(x=>dSg(x.p,x.v).s.rc).length;
-  if(ins)ins.innerHTML=`<span class="it ${rcC?'tp':stC>2?'tn':'tng'}">${selCity}</span>${tg.length}个市场：<b>${onC}</b>止跌·<b>${stC}</b>走平·<b>${rcC}</b>回升`;
+  const tt=tg.length,rcPct=tt?(rcC/tt*100).toFixed(0):0,stPct=tt?(stC/tt*100).toFixed(0):0,sdPct=tt?(onC/tt*100).toFixed(0):0;
+  const sgVerdict=rcPct>30?'回暖信号广泛，转折信心较强':stPct>40?'多数走平，等待方向选择':sdPct>40?'止跌信号初现，尚需确认':'下行通道未改，建议继续观望';
+  const sgCls=rcPct>30?'tp':stPct>40?'tn':sdPct>40?'tn':'tng';
+  if(ins)ins.innerHTML=`<span class="it ${sgCls}">${selCity}信号</span>${tt}个市场：<b>${onC}</b>止跌·<b>${stC}</b>走平·<b>${rcC}</b>回升。<br><b>整体判定：${sgVerdict}</b>`;
   tg.forEach(x=>{const{s,d:dt}=dSg(x.p,x.v);const card=document.createElement('div');card.className='sc';
     card.innerHTML=`<div class="sn2">${x.n} <span style="font-size:10px;color:var(--mu)">${x.t}</span></div><div class="sr"><span class="sd ${s.sd?'so':'sf'}"></span><span class="st2">止跌</span></div><div class="sdt">${dt.sd}</div><div class="sr"><span class="sd ${s.st?'so':s.sd?'sp':'sf'}"></span><span class="st2">走平</span></div><div class="sdt">${dt.st}</div><div class="sr"><span class="sd ${s.rc?'so':s.st?'sp':'sf'}"></span><span class="st2">回升</span></div><div class="sdt">${dt.rc}</div>`;c.appendChild(card)})}
 
@@ -487,7 +519,11 @@ function rRK(){const c=document.getElementById('rkC'),ins=document.getElementByI
   const allE=Object.entries(AC).map(([n,d])=>({n,rs:cRS(d.prices,APS),ry:d.rentYield,yc:cC(d.prices,12),mos:d.monthsOfSupply,pm:d.premiumRate,sh:d.showingIndex,sel:n===selCity}));
   const cd=AC[selCity];if(cd&&cd.property_types)Object.entries(cd.property_types).forEach(([n,v])=>allE.push({n:`${selCity}·${n}`,rs:cRS(v.prices,APS),ry:v.rentYield,yc:cC(v.prices,12),mos:v.monthsOfSupply,pm:v.premiumRate,sh:v.showingIndex,sel:false}));
   const best=allE.reduce((b,e)=>e.rs>b.rs?e:b);const selE=allE.find(e=>e.sel);const rsR=[...allE].sort((a,b)=>b.rs-a.rs);const selRk=rsR.findIndex(e=>e.sel)+1;
-  if(ins)ins.innerHTML=`<span class="it ti">排行</span>RS冠军：<b>${best.n}</b>(${best.rs})。<b>${selCity}</b>排第${selRk}/${allE.length}。`;
+  const rkPct=allE.length?(selRk/allE.length*100).toFixed(0):50;
+  const rkVerdict=rkPct<=20?'相对强势，跑赢多数城市':rkPct<=50?'中上水平，表现尚可':rkPct<=70?'表现中等，跟随大盘':'相对弱势，恢复可能慢于平均';
+  const rkCls=rkPct<=20?'tp':rkPct<=50?'tn':rkPct<=70?'ti':'tng';
+  const cj=cd?mktJudge(cd.prices,cd.volumes):{verdict:'—',hint:''};
+  if(ins)ins.innerHTML=`<span class="it ${rkCls}">排行·${cj.verdict}</span>RS冠军：<b>${best.n}</b>(${best.rs})。<b>${selCity}</b>排第${selRk}/${allE.length}(前${rkPct}%)，<b>${rkVerdict}</b>。<span style="color:var(--mu);font-size:10px">| ${cj.hint}</span>`;
   function mk(title,sorted,cols){let h=`<div class="rkt"><h4>${title}</h4><table><thead><tr><th>#</th><th>市场</th>`;cols.forEach(c=>h+=`<th>${c.h}</th>`);h+=`</tr></thead><tbody>`;
     sorted.slice(0,15).forEach((e,i)=>{h+=`<tr class="${e.sel?'hl':''}"><td><span class="rn ${i<3?'r'+(i+1):''}">${i+1}</span></td><td class="rktm">${e.sel?'<b>'+e.n+'</b>':e.n}</td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(e)}"`:''}>` +c.f(e)+'</td>');h+=`</tr>`});
     if(!sorted.slice(0,15).find(e=>e.sel)&&selE){const si=sorted.findIndex(e=>e.sel);h+=`<tr class="hl" style="border-top:2px solid var(--b)"><td><span class="rn">${si+1}</span></td><td class="rktm"><b>${selCity}</b></td>`;cols.forEach(c=>h+=`<td${c.s?` style="${c.s(selE)}"`:''}>` +c.f(selE)+'</td>');h+=`</tr>`}
@@ -519,7 +555,12 @@ function rVP(){dCIP('vp-');const g=document.getElementById('vpG'),t=document.get
   // Smart insight with diagnosis
   const mainDx=vpDx(d.prices,d.volumes);
   const vc0=((d.volumes[d.volumes.length-1]-d.volumes[Math.max(0,d.volumes.length-7)])/(d.volumes[Math.max(0,d.volumes.length-7)]||1)*100).toFixed(0);
-  if(ins)ins.innerHTML=`<span class="it ${mainDx.cls}">${mainDx.tag}</span><b>${selCity}</b>近3月${mainDx.tip}。成交量较半年前<b>${vc0>0?'+':''}${vc0}%</b>。<br><span style="color:var(--mu);font-size:10px">💡 核心口诀："量在价先"——成交量是领先指标，量变往往早于价变。柱子颜色：<span style="color:var(--g)">■绿=该月价涨</span> <span style="color:var(--r)">■红=该月价跌</span></span>`;
+  const vpJ=mktJudge(d.prices,d.volumes);
+  let streak2=0,dir2=d.prices[d.prices.length-1]>=d.prices[d.prices.length-2]?1:-1;
+  for(let i=d.prices.length-1;i>0;i--){if((d.prices[i]>=d.prices[i-1]?1:-1)===dir2)streak2++;else break}
+  const durTxt=streak2>=6?'中期趋势':streak2>=3?'短期趋势':'尚未形成趋势';
+  const dirTxt=dir2>0?'上行':'下行';
+  if(ins)ins.innerHTML=`<span class="it ${mainDx.cls}">${mainDx.tag}·${vpJ.verdict}</span><b>${selCity}</b>近3月${mainDx.tip}。成交量较半年前<b>${vc0>0?'+':''}${vc0}%</b>。<br>趋势持续性：已连续${dir2>0?'上涨':'下跌'}<b>${streak2}</b>月，${durTxt}${dirTxt}。<span style="color:var(--mu);font-size:10px"> | ${vpJ.hint}</span><br><span style="color:var(--mu);font-size:10px">💡 "量在价先"——成交量是领先指标。<span style="color:var(--g)">■绿=价涨</span> <span style="color:var(--r)">■红=价跌</span></span>`;
   tg.forEach((x,i)=>{const cid=`vp-${i}`,div=document.createElement('div');div.className='vpc';
     const dx=vpDx(x.p,x.v);
     div.innerHTML=`<canvas id="${cid}"></canvas><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding:3px 6px;background:var(--bg);border-radius:6px;font-size:10px"><span class="it ${dx.cls}" style="margin:0">${dx.tag}</span><span style="color:var(--mu)">${dx.tip.slice(0,30)}${dx.tip.length>30?'...':''}</span></div>`;
