@@ -1,0 +1,9 @@
+<canvas
+  type="2d"
+  id="{{canvasId}}"
+  class="f2-canvas"
+  style="width:{{width}};height:{{height}}"
+  bindtouchstart="touchStart"
+  bindtouchmove="touchMove"
+  bindtouchend="touchEnd"
+></canvas>
