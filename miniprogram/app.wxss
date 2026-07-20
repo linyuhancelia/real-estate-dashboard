@@ -1,13 +1,3 @@
-:root {
-  --g: #2d8c4e;
-  --r: #c0392b;
-  --warm: #e67e22;
-  --mu: #999;
-  --bg: #f5f5f5;
-  --card: #ffffff;
-  --b: #2980b9;
-}
-
 page {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   font-size: 14px;
@@ -56,12 +46,14 @@ page {
 .fs10 { font-size: 10px; }
 .fs11 { font-size: 11px; }
 .fs12 { font-size: 12px; }
+.fs13 { font-size: 13px; }
+.fs15 { font-size: 15px; }
 .fs16 { font-size: 16px; }
 .fs20 { font-size: 20px; }
 .fw600 { font-weight: 600; }
 .fw700 { font-weight: 700; }
 .text-center { text-align: center; }
-.text-muted { color: #999; }
+.text-muted { color: #777; }
 
 .signal-dot {
   display: inline-block;
@@ -72,7 +64,7 @@ page {
 }
 .signal-on { background: #2d8c4e; }
 .signal-pending { background: #f39c12; }
-.signal-off { background: #ddd; }
+.signal-off { background: #ccc; }
 
 .insight-box {
   background: #fafafa;
