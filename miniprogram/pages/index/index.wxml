@@ -54,6 +54,10 @@
     <view class="show-more" wx:if="{{!showAll && totalCount > filteredCities.length}}" bindtap="showAllCities">
       展开全部 {{totalCount}} 城 ▾
     </view>
+
+    <view class="loading-center" wx:if="{{filteredCities.length === 0}}">
+      <text class="text-muted fs12">没有匹配的城市</text>
+    </view>
   </scroll-view>
 </view>
 
