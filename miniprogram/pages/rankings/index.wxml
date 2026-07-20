@@ -18,7 +18,7 @@
   <!-- RS 排行 -->
   <view wx:if="{{activeTab === 'rs'}}">
     <view class="card insight-box">
-      <text class="fs12">RS相对强度衡量城市价格走势相对全国的表现，RS>50为跑赢大盘</text>
+      <text class="fs12">RS相对强度衡量城市价格走势相对全国的表现，RS 50以上为跑赢大盘</text>
     </view>
     <view class="rk-list">
       <view class="rk-item {{item.isFav ? 'rk-fav' : ''}}" wx:for="{{rsList}}" wx:key="name" bindtap="onCityTap" data-name="{{item.name}}">
