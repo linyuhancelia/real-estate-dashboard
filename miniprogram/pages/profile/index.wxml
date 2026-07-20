@@ -79,7 +79,7 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">RS相对强度</text>
-      <text class="fs11 text-muted">城市近12月涨幅在所有城市中的百分位排名(0-100)，>50跑赢大盘</text>
+      <text class="fs11 text-muted">城市近12月涨幅在所有城市中的百分位排名(0-100)，50以上跑赢大盘</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">信号灯体系</text>
