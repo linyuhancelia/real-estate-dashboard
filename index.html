@@ -145,7 +145,7 @@ function togDoc(){const dp=document.getElementById('docPanel');dp.classList.togg
 function tog(id){const b=document.getElementById(id),t=b.previousElementSibling.querySelector('.stg');b.classList.toggle('cl');t.classList.toggle('cl')}
 
 let D=null,MO=[],MOF=[],NAT={},AC={},APS=[];
-let DT={},PINNED=[],LOADING={},CITY_FILES={};
+let PINNED=[];
 let selCity='上海',fProv='',fTier='',fSch='',showAllCities=false,TP=12;
 const CI={};function dCI(k){if(CI[k]){CI[k].destroy();delete CI[k]}}function dCIP(p){Object.keys(CI).forEach(k=>{if(k.startsWith(p)){CI[k].destroy();delete CI[k]}})}
 const CC=['#e74c3c','#c0392b','#8e44ad','#2980b9','#e67e22','#1abc9c','#34495e','#9b59b6','#d4a017','#16a085','#27ae60','#00bcd4','#607d8b','#ff5722','#4caf50','#795548','#ff9800','#009688','#673ab7','#03a9f4'];
@@ -153,51 +153,22 @@ let ci=0;function gC(n){if(n==='上海')return'#e74c3c';if(n==='香港')return'#
 
 async function loadData(){
   const el=document.getElementById('ldO');
-  let useSummary=false;
-  try{const r=await fetch('data/summary.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json();useSummary=true}
-  catch(e1){try{const r=await fetch('latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
-  catch(e2){try{const r=await fetch('data/latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
-  catch(e3){el.innerHTML=`<div style="color:var(--r);text-align:center"><b>数据加载失败</b><br><small>${e1.message}</small></div>`;return}}}
-  MOF=D.meta.months;MO=MOF.map(m=>m.slice(2));NAT=D.national;CITY_FILES=D.meta.city_files||{};ci=0;
-  for(const[n,c]of Object.entries(D.cities)){
-    AC[n]={...c,color:gC(n)};
-    if(!useSummary&&c.property_types){DT[n]={property_types:c.property_types,area_rings:c.area_rings,hot_zones:c.hot_zones}}
-  }
+  try{const r=await fetch('latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
+  catch(e1){try{const r=await fetch('data/latest.json');if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json()}
+  catch(e2){el.innerHTML=`<div style="color:var(--r);text-align:center"><b>数据加载失败</b><br><small>${e1.message}</small></div>`;return}}
+  MOF=D.meta.months;MO=MOF.map(m=>m.slice(2));NAT=D.national;ci=0;
+  for(const[n,c]of Object.entries(D.cities)){AC[n]={...c,color:gC(n)}}
   APS=Object.values(AC).map(c=>c.prices);
   renderAll();document.getElementById('bN').style.display='flex';
   PINNED=JSON.parse(localStorage.getItem('pinnedCities')||'["上海"]');
-  PINNED.forEach(c=>loadCityDetail(c));
-}
-
-function loadCityDetail(name){
-  if(DT[name])return Promise.resolve(DT[name]);
-  if(LOADING[name])return LOADING[name];
-  const key=CITY_FILES[name];
-  if(!key)return Promise.resolve(null);
-  LOADING[name]=fetch(`data/city/${key}.json`)
-    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
-    .then(detail=>{
-      DT[name]=detail;
-      if(AC[name]){AC[name].property_types=detail.property_types;AC[name].area_rings=detail.area_rings;AC[name].hot_zones=detail.hot_zones}
-      delete LOADING[name];
-      if(name===selCity)renderDetail();
-      return detail;
-    }).catch(e=>{console.warn(`Detail load failed: ${name}`,e);delete LOADING[name];return null});
-  return LOADING[name];
 }
 
 function renderDetail(){rPT();rHZ();rAR();rVP()}
-function showDetailLoading(){
-  for(const id of['ptC','hzC','arC','vpG']){
-    const el=document.getElementById(id);
-    if(el)el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)"><div class="ldsp"></div><div style="font-size:11px;margin-top:8px">加载详情数据...</div></div>';
-  }
-}
 
 function togglePin(name){
   let p=JSON.parse(localStorage.getItem('pinnedCities')||'["上海"]');
   const i=p.indexOf(name);
-  if(i>=0){p.splice(i,1)}else{if(p.length>=3)return;p.push(name);loadCityDetail(name)}
+  if(i>=0){p.splice(i,1)}else{if(p.length>=3)return;p.push(name)}
   localStorage.setItem('pinnedCities',JSON.stringify(p));PINNED=p;rMG();
 }
 
@@ -270,15 +241,14 @@ function doSel(){
   const b=document.getElementById('scN');if(b)b.textContent=selCity;
   const r=document.getElementById('rB');if(r)r.style.display=selCity==='上海'?'none':'inline';
   document.querySelectorAll('.cm').forEach(e=>e.classList.toggle('act',e.dataset.city===selCity));
-  rPf();rSG();rRK();
-  if(DT[selCity]){renderDetail()}else{showDetailLoading();loadCityDetail(selCity)}
+  rPf();rSG();rRK();renderDetail();
   const p=document.getElementById('s-pf');if(p)setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'start'}),100)}
 function selCi(n){if(!AC[n])return;selCity=n;doSel()}
 function resetC(){selCity='上海';fProv='';fTier='';fSch='';showAllCities=false;
   document.getElementById('fP').value='';document.getElementById('fT').value='';document.getElementById('fS').value='';
   const sel=document.getElementById('fC');sel.innerHTML='<option value="">选择城市</option>';Object.keys(AC).forEach(n=>{sel.innerHTML+=`<option value="${n}">${n}</option>`});
   document.getElementById('fCt').textContent=`${Object.keys(AC).length}城`;rMG();doSel()}
-function setTP(n){TP=n;document.querySelectorAll('.ttg button').forEach(b=>b.classList.toggle('act',parseInt(b.dataset.m)===n));rOV();rMG();rPf();if(DT[selCity])renderDetail()}
+function setTP(n){TP=n;document.querySelectorAll('.ttg button').forEach(b=>b.classList.toggle('act',parseInt(b.dataset.m)===n));rOV();rMG();rPf();renderDetail()}
 
 // ===== RENDER ALL =====
 function renderAll(){
@@ -317,7 +287,7 @@ function renderAll(){
 
   <div class="S" id="s-vp"><div class="SH" onclick="tog('bm8')"><div class="ST" id="m8T">📊 量价关系</div><span class="stg">▾</span></div><div class="SB" id="bm8"><div class="ins" id="iM8"></div><div class="g3" id="vpG"></div></div></div>
 
-  <div class="foot">房产趋势看板 v6.0 · 全国${tc}城 · 安居客+中国房价行情+房天下 三源交叉·板块级下钻 · 不构成投资建议</div>`;
+  <div class="foot">房产趋势看板 v7.0 · 全国${tc}城 · 三源交叉·板块级下钻·每周更新 · 不构成投资建议</div>`;
   // Populate doc panel
   document.getElementById('docBody').innerHTML=`<div class="meth">
 <h4>📡 数据来源与更新</h4>
