@@ -38,7 +38,7 @@
   <!-- 租售比排行 -->
   <view wx:if="{{activeTab === 'ry'}}">
     <view class="card insight-box">
-      <text class="fs12">租售比反映年租金回报率，越高表示租金收益越好。一般>3%为较优</text>
+      <text class="fs12">租售比反映年租金回报率，越高表示租金收益越好。一般3%以上为较优</text>
     </view>
     <view class="rk-list">
       <view class="rk-item {{item.isFav ? 'rk-fav' : ''}}" wx:for="{{ryList}}" wx:key="name" bindtap="onCityTap" data-name="{{item.name}}">
@@ -58,7 +58,7 @@
   <!-- 去化周期排行 -->
   <view wx:if="{{activeTab === 'mss'}}">
     <view class="card insight-box">
-      <text class="fs12">去化周期指库存消化所需月数，越短表示供需越紧张。一般<12月为健康</text>
+      <text class="fs12">去化周期指库存消化所需月数，越短表示供需越紧张。一般12月以内为健康</text>
     </view>
     <view class="rk-list">
       <view class="rk-item {{item.isFav ? 'rk-fav' : ''}}" wx:for="{{mssList}}" wx:key="name" bindtap="onCityTap" data-name="{{item.name}}">
