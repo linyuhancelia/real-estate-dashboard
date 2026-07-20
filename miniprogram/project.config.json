@@ -1,0 +1,19 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "real-estate-dashboard",
+  "description": "房产趋势看板",
+  "appid": "wx5a37dece49fd4fea",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "preloadBackgroundData": false,
+    "minified": true,
+    "newFeature": true,
+    "autoAudits": false,
+    "useCompilerPlugins": false
+  },
+  "compileType": "miniprogram",
+  "condition": {}
+}
