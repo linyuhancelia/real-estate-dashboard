@@ -1,0 +1,81 @@
+<view class="page" wx:if="{{loaded}}">
+  <!-- Tab 切换 -->
+  <view class="rk-tabs">
+    <view class="rk-tab {{activeTab === 'rs' ? 'active' : ''}}" bindtap="switchTab" data-tab="rs">
+      <text class="rk-tab-title">RS强度</text>
+      <text class="rk-tab-desc">跑赢市场</text>
+    </view>
+    <view class="rk-tab {{activeTab === 'ry' ? 'active' : ''}}" bindtap="switchTab" data-tab="ry">
+      <text class="rk-tab-title">租售比</text>
+      <text class="rk-tab-desc">收益率</text>
+    </view>
+    <view class="rk-tab {{activeTab === 'mss' ? 'active' : ''}}" bindtap="switchTab" data-tab="mss">
+      <text class="rk-tab-title">去化周期</text>
+      <text class="rk-tab-desc">供需平衡</text>
+    </view>
+  </view>
+
+  <!-- RS 排行 -->
+  <view wx:if="{{activeTab === 'rs'}}">
+    <view class="card insight-box">
+      <text class="fs12">RS相对强度衡量城市价格走势相对全国的表现，RS>50为跑赢大盘</text>
+    </view>
+    <view class="rk-list">
+      <view class="rk-item {{item.isFav ? 'rk-fav' : ''}}" wx:for="{{rsList}}" wx:key="name" bindtap="onCityTap" data-name="{{item.name}}">
+        <view class="rk-rank {{item.rank <= 3 ? 'rk-top3' : ''}}">{{item.rank}}</view>
+        <view class="rk-info">
+          <text class="fw600 fs13">{{item.name}}</text>
+          <text class="text-muted fs10"> {{item.tier}}·{{item.province}}</text>
+        </view>
+        <view class="rk-val-box">
+          <text class="mono fw700 fs15" style="color:{{item.valColor}}">{{item.val}}</text>
+          <text class="mono fs10 {{item.ycCls}}">年{{item.ycStr}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 租售比排行 -->
+  <view wx:if="{{activeTab === 'ry'}}">
+    <view class="card insight-box">
+      <text class="fs12">租售比反映年租金回报率，越高表示租金收益越好。一般>3%为较优</text>
+    </view>
+    <view class="rk-list">
+      <view class="rk-item {{item.isFav ? 'rk-fav' : ''}}" wx:for="{{ryList}}" wx:key="name" bindtap="onCityTap" data-name="{{item.name}}">
+        <view class="rk-rank {{item.rank <= 3 ? 'rk-top3' : ''}}">{{item.rank}}</view>
+        <view class="rk-info">
+          <text class="fw600 fs13">{{item.name}}</text>
+          <text class="text-muted fs10"> {{item.tier}}·{{item.province}}</text>
+        </view>
+        <view class="rk-val-box">
+          <text class="mono fw700 fs15" style="color:{{item.valColor}}">{{item.val}}</text>
+          <text class="mono fs10 text-muted">{{item.priceStr}}元</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 去化周期排行 -->
+  <view wx:if="{{activeTab === 'mss'}}">
+    <view class="card insight-box">
+      <text class="fs12">去化周期指库存消化所需月数，越短表示供需越紧张。一般<12月为健康</text>
+    </view>
+    <view class="rk-list">
+      <view class="rk-item {{item.isFav ? 'rk-fav' : ''}}" wx:for="{{mssList}}" wx:key="name" bindtap="onCityTap" data-name="{{item.name}}">
+        <view class="rk-rank {{item.rank <= 3 ? 'rk-top3' : ''}}">{{item.rank}}</view>
+        <view class="rk-info">
+          <text class="fw600 fs13">{{item.name}}</text>
+          <text class="text-muted fs10"> {{item.tier}}·{{item.province}}</text>
+        </view>
+        <view class="rk-val-box">
+          <text class="mono fw700 fs15" style="color:{{item.valColor}}">{{item.val}}</text>
+          <text class="mono fs10 text-muted">{{item.priceStr}}元</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view class="loading-center" wx:else>
+  <text>加载中...</text>
+</view>
