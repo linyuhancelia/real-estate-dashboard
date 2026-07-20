@@ -1,0 +1,111 @@
+.overview-card {
+  padding: 14px;
+}
+.ov-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.ov-body {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.ov-hint {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #f0f0f0;
+}
+.chart-box {
+  position: relative;
+}
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.filter-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: #f5f5f5;
+  color: #666;
+  white-space: nowrap;
+}
+.filter-btn.active {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.filter-btn.reset {
+  background: #ffebee;
+  color: #c62828;
+}
+.filter-search {
+  flex: 1;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: #f5f5f5;
+  min-width: 0;
+}
+
+/* City list */
+.city-list {
+  height: calc(100vh - 480px);
+}
+.city-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin: 0 12px;
+  background: #fff;
+  border-bottom: 1px solid #f8f8f8;
+}
+.city-item:first-child {
+  border-radius: 12px 12px 0 0;
+  margin-top: 8px;
+}
+.city-item:last-child {
+  border-radius: 0 0 12px 12px;
+  border-bottom: none;
+  margin-bottom: 8px;
+}
+.ci-left {
+  flex: 1;
+}
+.ci-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.ci-meta {
+  margin-top: 2px;
+}
+.ci-center {
+  text-align: right;
+  margin-right: 12px;
+}
+.ci-price {
+  font-size: 14px;
+}
+.ci-change {
+  font-size: 11px;
+  margin-top: 2px;
+}
+.ci-right {
+  flex-shrink: 0;
+}
+
+.show-more {
+  text-align: center;
+  padding: 14px;
+  font-size: 13px;
+  color: #2980b9;
+}
