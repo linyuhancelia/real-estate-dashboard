@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/city/index",
+    "pages/rankings/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "房产趋势",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f5f5",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#2980b9",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "大盘",
+        "iconPath": "assets/tab-home.png",
+        "selectedIconPath": "assets/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/rankings/index",
+        "text": "排行",
+        "iconPath": "assets/tab-rank.png",
+        "selectedIconPath": "assets/tab-rank-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/tab-profile.png",
+        "selectedIconPath": "assets/tab-profile-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}
