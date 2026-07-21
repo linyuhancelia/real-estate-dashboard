@@ -11,6 +11,7 @@ Page({
     natJudge: {},
     shJudge: {},
     shVsNat: '',
+    top1Name: '',
     tierCards: [],
     period: '1年'
   },
@@ -42,12 +43,27 @@ Page({
     var diff = Math.abs(syc - nyc).toFixed(1)
     var shVsNat = (syc > nyc ? '跑赢' : '跑输') + '全国' + diff + 'pp'
 
+    // find Top1 anomaly city (largest absolute year change)
+    var top1 = null
+    var maxAbsYc = 0
+    Object.keys(cities).forEach(function(name) {
+      if (name === '上海') return
+      var c = cities[name]
+      var yc = Math.abs(algo.cC(c.prices, 12))
+      if (yc > maxAbsYc) {
+        maxAbsYc = yc
+        top1 = { name: name, prices: c.prices }
+      }
+    })
+    this._top1City = top1
+
     this.setData({
       loaded: true,
       updateTime: g.meta.generated_at || '',
       natJudge: natJudge,
       shJudge: shJudge,
-      shVsNat: shVsNat
+      shVsNat: shVsNat,
+      top1Name: top1 ? top1.name : ''
     })
 
     this.buildTierCards(cities)
@@ -130,6 +146,14 @@ Page({
     var shBc = fmt.baselineChange(sh.prices.slice(-n))
 
     var allVals = natBc.concat(shBc)
+
+    // Top1 anomaly city line
+    var top1Bc = null
+    if (this._top1City) {
+      top1Bc = fmt.baselineChange(this._top1City.prices.slice(-n))
+      allVals = allVals.concat(top1Bc)
+    }
+
     var minV = Math.min.apply(null, allVals)
     var maxV = Math.max.apply(null, allVals)
     var range = maxV - minV || 1
@@ -180,13 +204,24 @@ Page({
 
     drawLine(natBc, '#999', 1.5, [4, 2])
     drawLine(shBc, '#e74c3c', 2.5)
+    if (top1Bc) {
+      drawLine(top1Bc, '#2ecc71', 2, [6, 3])
+    }
 
+    // Legend
     ctx.font = '10px sans-serif'
-    ctx.fillStyle = '#e74c3c'
     ctx.textAlign = 'left'
-    ctx.fillText('上海', padL + 4, padT - 6)
+    var lx = padL + 4
+    ctx.fillStyle = '#e74c3c'
+    ctx.fillText('上海', lx, padT - 6)
+    lx += 36
     ctx.fillStyle = '#999'
-    ctx.fillText('全国', padL + 40, padT - 6)
+    ctx.fillText('全国', lx, padT - 6)
+    if (this._top1City) {
+      lx += 36
+      ctx.fillStyle = '#2ecc71'
+      ctx.fillText(this._top1City.name, lx, padT - 6)
+    }
   },
 
   onTop1Tap: function(e) {

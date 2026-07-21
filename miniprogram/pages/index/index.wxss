@@ -45,17 +45,13 @@
   padding: 14px 12px 6px;
 }
 
-/* Tier grid */
-.tier-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+/* Tier list */
+.tier-list {
   padding: 0 12px 12px;
 }
 .tier-card {
-  width: calc(50% - 4px);
   padding: 12px;
-  box-sizing: border-box;
+  margin-bottom: 8px;
 }
 .tc-header {
   display: flex;
@@ -68,26 +64,25 @@
 .tc-tier {
   font-size: 14px;
 }
+.tc-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .tc-avg {
-  margin-bottom: 10px;
-}
-.tc-price {
-  margin-bottom: 2px;
-}
-.tc-yc {
-  margin-top: 2px;
+  display: flex;
+  gap: 16px;
 }
 .tc-top1 {
   background: #fafafa;
   border-radius: 8px;
-  padding: 8px;
-}
-.tc-top1-label {
+  padding: 6px 10px;
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
+  gap: 6px;
 }
 .tc-top1-city {
   display: flex;
   align-items: center;
+  gap: 6px;
 }

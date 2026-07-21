@@ -12,6 +12,7 @@
     <view class="cp-price">
       <text class="cp-price-num mono fw700">{{priceStr}}</text>
       <text class="cp-price-unit text-muted fs10">元/㎡</text>
+      <view class="tag tag-{{vpDiag.cls}}" wx:if="{{vpDiag}}" style="margin-left:12px">{{vpDiag.label}}</view>
     </view>
 
     <view class="cp-metrics">
@@ -83,13 +84,12 @@
     </view>
   </view>
 
-  <!-- Tab切换 -->
+  <!-- Tab切换: 物业 → 板块 → 区域 → 信号灯 -->
   <view class="tab-bar">
-    <view class="tab-item {{activeTab === 'signal' ? 'active' : ''}}" bindtap="switchTab" data-tab="signal">信号灯</view>
     <view class="tab-item {{activeTab === 'property' ? 'active' : ''}}" bindtap="switchTab" data-tab="property">物业</view>
     <view class="tab-item {{activeTab === 'hotzone' ? 'active' : ''}}" bindtap="switchTab" data-tab="hotzone">板块</view>
     <view class="tab-item {{activeTab === 'area' ? 'active' : ''}}" bindtap="switchTab" data-tab="area">区域</view>
-    <view class="tab-item {{activeTab === 'volprice' ? 'active' : ''}}" bindtap="switchTab" data-tab="volprice">量价</view>
+    <view class="tab-item {{activeTab === 'signal' ? 'active' : ''}}" bindtap="switchTab" data-tab="signal">信号灯</view>
   </view>
 
   <!-- 信号灯详情 -->
@@ -206,6 +206,7 @@
       <text class="fs10 text-muted">排序：</text>
       <text class="hz-sort-btn {{hzSort === 'price' ? 'active' : ''}}" bindtap="switchHzSort" data-sort="price">价格</text>
       <text class="hz-sort-btn {{hzSort === 'change' ? 'active' : ''}}" bindtap="switchHzSort" data-sort="change">涨幅</text>
+      <text class="hz-sort-btn {{hzSort === 'rent' ? 'active' : ''}}" bindtap="switchHzSort" data-sort="rent">租售比</text>
     </view>
     <view class="card hz-card" wx:for="{{hzList}}" wx:key="name">
       <view class="hz-header">
@@ -233,6 +234,7 @@
         <view class="signal-dot {{item.signals.rc ? 'signal-on' : item.signals.st ? 'signal-pending' : 'signal-off'}}"></view>
         <text class="fs10">回升</text>
         <text class="text-muted fs10 hz-district">{{item.district}}</text>
+        <text class="text-muted fs10 hz-rent" wx:if="{{item.rentYield}}">租售比 {{item.rentYield}}%</text>
       </view>
     </view>
     <view class="card" wx:if="{{hzList.length === 0}}">
@@ -282,45 +284,6 @@
     </view>
     <view class="card" wx:if="{{arList.length === 0}}">
       <view class="loading-center text-muted fs12">暂无区域数据</view>
-    </view>
-  </view>
-
-  <!-- M9 量价关系 -->
-  <view wx:if="{{activeTab === 'volprice' && detailLoaded}}">
-    <view class="card insight-box" wx:if="{{vpDiag}}">
-      <view class="tag tag-{{vpDiag.cls}}">{{vpDiag.label}}</view>
-      <text class="fs12"> {{vpDiag.detail}}</text>
-      <view class="mt8 text-muted fs11">{{vpDiag.hint}}</view>
-    </view>
-    <view class="card">
-      <view class="section-header">
-        <text class="section-title">量价走势</text>
-        <view class="period-bar">
-          <text class="period-btn {{vpPeriod === '6月' ? 'active' : ''}}" bindtap="switchVpPeriod" data-p="6月">6月</text>
-          <text class="period-btn {{vpPeriod === '1年' ? 'active' : ''}}" bindtap="switchVpPeriod" data-p="1年">1年</text>
-          <text class="period-btn {{vpPeriod === '2年' ? 'active' : ''}}" bindtap="switchVpPeriod" data-p="2年">2年</text>
-        </view>
-      </view>
-      <view class="chart-box" style="height:240px">
-        <f2-canvas canvasId="vpChart" height="240px" bind:bindinit="onVpChartInit"></f2-canvas>
-      </view>
-    </view>
-    <view class="card vp-table">
-      <view class="section-title">量价数据</view>
-      <view class="vp-row vp-header-row">
-        <text class="vp-cell fs10 fw600">月份</text>
-        <text class="vp-cell fs10 fw600">均价</text>
-        <text class="vp-cell fs10 fw600">环比</text>
-        <text class="vp-cell fs10 fw600">成交量</text>
-        <text class="vp-cell fs10 fw600">量变化</text>
-      </view>
-      <view class="vp-row" wx:for="{{vpTable}}" wx:key="month">
-        <text class="vp-cell fs10">{{item.month}}</text>
-        <text class="vp-cell fs10 mono">{{item.price}}</text>
-        <text class="vp-cell fs10 mono {{item.pcCls}}">{{item.pc}}</text>
-        <text class="vp-cell fs10 mono">{{item.vol}}</text>
-        <text class="vp-cell fs10 mono {{item.vcCls}}">{{item.vc}}</text>
-      </view>
     </view>
   </view>
 </view>

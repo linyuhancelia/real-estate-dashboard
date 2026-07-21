@@ -2,7 +2,7 @@
 .cp-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .cp-name { font-size: 20px; font-weight: 700; }
 .cp-meta { margin-top: 2px; }
-.cp-price { margin-top: 10px; }
+.cp-price { margin-top: 10px; display: flex; align-items: center; }
 .cp-price-num { font-size: 24px; }
 .cp-price-unit { margin-left: 4px; }
 
@@ -224,6 +224,7 @@
   margin-top: 6px;
 }
 .hz-district { margin-left: auto; }
+.hz-rent { margin-left: auto; }
 
 /* M6 Area Rings */
 .ar-card { padding: 12px 14px; }

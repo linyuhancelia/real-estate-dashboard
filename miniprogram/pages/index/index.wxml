@@ -25,34 +25,33 @@
   <!-- 类别聚合卡片 -->
   <view class="section-title">
     <text class="fw600 fs14">城市类别概览</text>
-    <text class="text-muted fs10">按类别聚合，标注Top1异动</text>
+    <text class="text-muted fs10">Top1异动 = 年变化最大</text>
   </view>
 
-  <view class="tier-grid">
+  <view class="tier-list">
     <view class="card tier-card" wx:for="{{tierCards}}" wx:key="tier">
       <view class="tc-header">
         <text class="tc-tier fw600">{{item.tier}}</text>
         <text class="tc-count text-muted fs10">{{item.count}}城</text>
       </view>
-      <view class="tc-avg">
-        <view class="tc-price">
-          <text class="mono fw600 fs15">{{item.avgPrice}}</text>
-          <text class="text-muted fs10"> 元/㎡</text>
+      <view class="tc-body">
+        <view class="tc-avg">
+          <view>
+            <text class="text-muted fs10">均价 </text>
+            <text class="mono fw600 fs13">{{item.avgPrice}}</text>
+          </view>
+          <view>
+            <text class="text-muted fs10">年变化 </text>
+            <text class="mono fw600 {{item.avgYcCls}}">{{item.avgYcStr}}</text>
+          </view>
         </view>
-        <view class="tc-yc">
-          <text class="mono fw600 {{item.avgYcCls}}">{{item.avgYcStr}}</text>
-          <text class="text-muted fs10"> 年变化</text>
-        </view>
-      </view>
-      <view class="tc-top1" bindtap="onTop1Tap" data-name="{{item.top1Name}}">
-        <view class="tc-top1-label">
-          <text class="fs10 text-muted">Top1 异动</text>
-          <view class="tag tag-{{item.top1TempC}}" style="margin-left:6px">{{item.top1TempL}}</view>
-        </view>
-        <view class="tc-top1-city">
-          <text class="fw600 fs13">{{item.top1Name}}</text>
-          <text class="mono fw600 {{item.top1YcCls}}" style="margin-left:8px">{{item.top1YcStr}}</text>
-          <text class="fs10" style="color:#2980b9;margin-left:auto">详情 ></text>
+        <view class="tc-top1" bindtap="onTop1Tap" data-name="{{item.top1Name}}">
+          <view class="tag tag-{{item.top1TempC}}">{{item.top1TempL}}</view>
+          <view class="tc-top1-city">
+            <text class="fw600 fs12">{{item.top1Name}}</text>
+            <text class="mono fw600 fs11 {{item.top1YcCls}}">{{item.top1YcStr}}</text>
+            <text class="fs10" style="color:#2980b9"> ></text>
+          </view>
         </view>
       </view>
     </view>

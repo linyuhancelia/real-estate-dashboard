@@ -25,7 +25,7 @@ Page({
     signals: {},
     changes: [],
     judge: {},
-    activeTab: 'signal',
+    activeTab: 'property',
     signalTargets: [],
     inactiveSignals: [],
     inactiveCount: 0,
@@ -91,6 +91,10 @@ Page({
       ],
       judge: judge
     })
+
+    var vp = algo.vpDx(d.prices, d.volumes)
+    var vpClsMap = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
+    this.setData({ vpDiag: { label: vp.label, cls: vpClsMap[vp.label] || 'ti' } })
 
     this._cityData = d
     this._natData = g.national
@@ -629,6 +633,8 @@ Page({
     var list = this._hzAll ? this._hzAll.slice() : []
     if (sort === 'change') {
       list.sort(function(a, b) { return b.yc - a.yc })
+    } else if (sort === 'rent') {
+      list.sort(function(a, b) { return b.rentYield - a.rentYield })
     } else {
       list.sort(function(a, b) { return b.price - a.price })
     }

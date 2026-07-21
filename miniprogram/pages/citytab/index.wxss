@@ -21,10 +21,22 @@
   background: #2980b9;
   color: #fff;
 }
-.ct-search-bar {
+.ct-filter-bar {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.ct-filter-btn {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #f5f5f5;
+  color: #666;
+  white-space: nowrap;
+}
+.ct-filter-btn.active {
+  background: #e3f2fd;
+  color: #1565c0;
 }
 .ct-search {
   flex: 1;
@@ -33,14 +45,6 @@
   border-radius: 14px;
   background: #f5f5f5;
   min-width: 0;
-}
-.ct-picker-btn {
-  font-size: 12px;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: #e3f2fd;
-  color: #1565c0;
-  white-space: nowrap;
 }
 .ct-suggest {
   white-space: nowrap;
@@ -56,51 +60,95 @@
   color: #333;
 }
 
-/* Reuse city profile styles */
+/* City profile */
 .city-profile { padding: 14px; }
 .cp-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .cp-name { font-size: 20px; font-weight: 700; }
 .cp-meta { margin-top: 2px; }
-.cp-price { margin-top: 10px; }
+.cp-price { margin-top: 10px; display: flex; align-items: center; }
 .cp-price-num { font-size: 24px; }
 .cp-price-unit { margin-left: 4px; }
 .cp-metrics {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-  padding: 10px 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
+  display: flex; gap: 12px; margin-top: 12px;
+  padding: 10px 0; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0;
 }
 .cp-metric { flex: 1; text-align: center; }
 .cp-ml { display: block; font-size: 10px; margin-bottom: 2px; }
 .cp-mv { display: block; font-size: 13px; }
-.cp-changes {
-  display: flex;
-  margin-top: 10px;
-  gap: 8px;
-}
-.cp-chg {
-  flex: 1;
-  text-align: center;
-  padding: 6px 0;
-  background: #fafafa;
-  border-radius: 8px;
-}
+.cp-changes { display: flex; margin-top: 10px; gap: 8px; }
+.cp-chg { flex: 1; text-align: center; padding: 6px 0; background: #fafafa; border-radius: 8px; }
 .cp-chg-label { display: block; font-size: 10px; margin-bottom: 2px; }
 .cp-chg-val { display: block; font-size: 13px; font-weight: 600; }
-.cp-signals {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-  gap: 16px;
-}
+.cp-signals { display: flex; align-items: center; margin-top: 10px; gap: 16px; }
 .cp-sig { display: flex; align-items: center; gap: 4px; }
 .cp-rs { margin-left: auto; text-align: right; }
 .cp-rs-val { font-size: 22px; display: block; }
 
-/* More link */
-.ct-more {
-  text-align: center;
-  padding: 14px;
+/* Chart */
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.section-title { font-size: 13px; font-weight: 600; color: #333; }
+.period-bar { display: flex; gap: 4px; }
+.period-btn { font-size: 11px; padding: 4px 10px; border-radius: 10px; background: #f5f5f5; color: #999; }
+.period-btn.active { background: #2980b9; color: #fff; }
+.chart-box { position: relative; }
+
+/* Tabs */
+.tab-bar {
+  display: flex; background: #fff; padding: 0 12px;
+  margin: 8px 12px 0; border-radius: 12px 12px 0 0; border-bottom: 1px solid #f0f0f0;
 }
+.tab-item { flex: 1; text-align: center; padding: 10px 0; font-size: 12px; color: #999; position: relative; }
+.tab-item.active { color: #2980b9; font-weight: 600; }
+.tab-item.active::after {
+  content: ''; position: absolute; bottom: 0; left: 30%; right: 30%;
+  height: 2px; background: #2980b9; border-radius: 1px;
+}
+
+/* Signal cards */
+.signal-card { padding: 12px 14px; }
+.sc-name { margin-bottom: 8px; }
+.sc-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+.sc-detail { margin-left: auto; max-width: 60%; text-align: right; }
+.sig-fold { text-align: center; padding: 10px; }
+.sig-inactive { opacity: 0.6; }
+
+/* Property Types */
+.pt-card { padding: 12px 14px; }
+.pt-header { display: flex; justify-content: space-between; align-items: center; }
+.pt-price { margin-top: 6px; }
+.pt-changes { display: flex; gap: 8px; margin-top: 8px; }
+.pt-chg { flex: 1; text-align: center; padding: 4px 0; background: #fafafa; border-radius: 6px; }
+.pt-chg text { display: block; }
+.pt-metrics { display: flex; gap: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
+
+/* Hot Zones */
+.hz-sort-bar { display: flex; align-items: center; gap: 6px; padding: 6px 14px; }
+.hz-sort-btn { font-size: 11px; padding: 6px 14px; border-radius: 12px; background: #f5f5f5; color: #666; }
+.hz-sort-btn.active { background: #2980b9; color: #fff; }
+.hz-card { padding: 10px 14px; }
+.hz-header { display: flex; align-items: center; gap: 8px; }
+.hz-rank {
+  width: 22px; height: 22px; line-height: 22px; text-align: center;
+  font-size: 11px; font-weight: 600; border-radius: 6px; background: #f0f0f0; color: #666; flex-shrink: 0;
+}
+.hz-info { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hz-right { text-align: right; }
+.hz-right text { display: block; }
+.hz-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.hz-bar-bg { flex: 1; height: 6px; background: #f5f5f5; border-radius: 3px; overflow: hidden; }
+.hz-bar-fill { height: 100%; border-radius: 3px; }
+.bar-up { background: #2d8c4e; }
+.bar-down { background: #c0392b; }
+.hz-signals { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.hz-rent { margin-left: auto; }
+
+/* Area Rings */
+.ar-card { padding: 12px 14px; }
+.ar-header { margin-bottom: 6px; }
+.ar-price { display: flex; align-items: baseline; }
+.ar-bar-row { margin-top: 6px; }
+.ar-bar-bg { height: 8px; background: #f5f5f5; border-radius: 4px; overflow: hidden; }
+.ar-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3498db, #2980b9); }
+.ar-metrics { display: flex; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f5f5f5; }
+.ar-m { flex: 1; text-align: center; }
+.ar-m text { display: block; }
