@@ -46,6 +46,9 @@ Page({
     hzList: [],
     hzInsight: null,
     hzSort: 'price',
+    hzDistricts: [],
+    hzDistrictIdx: 0,
+    hzShowFilter: false,
     arList: [],
     arInsight: null
   },
@@ -310,24 +313,34 @@ Page({
     })
 
     list.sort(function(a, b) { return b.price - a.price })
-    var top = list.slice(0, 30)
-    var maxAbs = 0
-    top.forEach(function(h) { if (Math.abs(h.m3c) > maxAbs) maxAbs = Math.abs(h.m3c) })
-    if (maxAbs === 0) maxAbs = 1
-    top.forEach(function(h) { h.barW = Math.min(100, Math.abs(h.m3c) / maxAbs * 100).toFixed(0) })
+    this._hzAll = list
 
-    this._hzAll = top
+    var districtSet = {}
+    list.forEach(function(h) { if (h.district) districtSet[h.district] = true })
+    var districtList = ['全部'].concat(Object.keys(districtSet).sort())
+    var showFilter = Object.keys(districtSet).length > 1 && list.length > 10
+
+    var display = list.slice(0, 30)
+    var maxAbs = 0
+    display.forEach(function(h) { if (Math.abs(h.m3c) > maxAbs) maxAbs = Math.abs(h.m3c) })
+    if (maxAbs === 0) maxAbs = 1
+    display.forEach(function(h) { h.barW = Math.min(100, Math.abs(h.m3c) / maxAbs * 100).toFixed(0) })
 
     var upCount = 0
-    top.forEach(function(h) { if (h.yc > 0) upCount++ })
-    var upPct = top.length ? Math.round(upCount / top.length * 100) : 0
-    var insightText = '展示前' + top.length + '个板块，' + upCount + '个年涨(' + upPct + '%)。'
+    list.forEach(function(h) { if (h.yc > 0) upCount++ })
+    var total = list.length
+    var upPct = total ? Math.round(upCount / total * 100) : 0
+    var insightText = (total > 30 ? '展示前30/' : '共') + total + '个板块，' + upCount + '个年涨(' + upPct + '%)。'
     insightText += upPct >= 50 ? '多数板块回暖，市场底部较为扎实' :
       upPct >= 25 ? '板块分化显著，核心板块率先企稳' : '普跌态势延续，仅极少数板块抗跌'
 
     this.setData({
-      hzList: top,
-      hzInsight: { text: insightText, cls: upPct >= 50 ? 'tp' : upPct >= 25 ? 'tn' : 'tng' }
+      hzList: display,
+      hzInsight: { text: insightText, cls: upPct >= 50 ? 'tp' : upPct >= 25 ? 'tn' : 'tng' },
+      hzDistricts: districtList,
+      hzDistrictIdx: 0,
+      hzShowFilter: showFilter,
+      hzSort: 'price'
     })
     this._rebuildSignalDisplay()
   },
@@ -448,15 +461,45 @@ Page({
   switchHzSort: function(e) {
     var sort = e.currentTarget.dataset.sort
     if (sort === this.data.hzSort) return
-    var list = this._hzAll ? this._hzAll.slice() : []
-    if (sort === 'change') {
-      list.sort(function(a, b) { return b.yc - a.yc })
-    } else if (sort === 'rent') {
-      list.sort(function(a, b) { return b.rentYield - a.rentYield })
-    } else {
-      list.sort(function(a, b) { return b.price - a.price })
+    this.setData({ hzSort: sort })
+    this._applyHzFilter()
+  },
+
+  switchHzDistrict: function(e) {
+    var idx = parseInt(e.currentTarget.dataset.idx)
+    if (idx === this.data.hzDistrictIdx) return
+    this.setData({ hzDistrictIdx: idx })
+    this._applyHzFilter()
+  },
+
+  _applyHzFilter: function() {
+    var all = this._hzAll || []
+    var districts = this.data.hzDistricts || []
+    var idx = this.data.hzDistrictIdx || 0
+    var sort = this.data.hzSort || 'price'
+
+    var filtered = all
+    if (idx > 0 && districts[idx]) {
+      var target = districts[idx]
+      filtered = all.filter(function(h) { return h.district === target })
     }
-    this.setData({ hzSort: sort, hzList: list })
+
+    var sorted = filtered.slice()
+    if (sort === 'change') {
+      sorted.sort(function(a, b) { return b.yc - a.yc })
+    } else if (sort === 'rent') {
+      sorted.sort(function(a, b) { return (b.rentYield || 0) - (a.rentYield || 0) })
+    } else {
+      sorted.sort(function(a, b) { return b.price - a.price })
+    }
+
+    var display = sorted.slice(0, 30)
+    var maxAbs = 0
+    display.forEach(function(h) { if (Math.abs(h.m3c) > maxAbs) maxAbs = Math.abs(h.m3c) })
+    if (maxAbs === 0) maxAbs = 1
+    display.forEach(function(h) { h.barW = Math.min(100, Math.abs(h.m3c) / maxAbs * 100).toFixed(0) })
+
+    this.setData({ hzList: display })
   },
 
   onShareAppMessage: function() {

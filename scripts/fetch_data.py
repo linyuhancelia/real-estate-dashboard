@@ -1021,6 +1021,47 @@ def build_hot_zones(prices: List[int], volumes: List[int],
     return result
 
 
+def build_district_hot_zones(prices: List[int], volumes: List[int],
+                             city_name: str, district_prices: Dict[str, int],
+                             seed: int = 0) -> dict:
+    """构建全量行政区板块（用于非板块级城市）。"""
+    rng = random.Random(seed)
+    avg_price = prices[-1] if prices else 10000
+    result = {}
+
+    if not district_prices or len(district_prices) < 2:
+        for name, ratio in [("核心商圈", 1.4), ("新城区", 0.85), ("开发区", 0.7)]:
+            zone_prices = [round(p * ratio * (1 + rng.gauss(0, 0.015))) for p in prices]
+            zone_volumes = [max(5, round(v * 0.06 * ratio * (1 + rng.gauss(0, 0.05)))) for v in volumes]
+            result[name] = {
+                "sub": f"{city_name}·{name}",
+                "district": name,
+                "prices": zone_prices,
+                "volumes": zone_volumes,
+                "rentYield": round(2.0 - ratio * 0.3, 1),
+                "monthsOfSupply": round(18 - ratio * 5, 1),
+                "premiumRate": round(0.85 + ratio * 0.08, 2),
+            }
+        return result
+
+    sorted_d = sorted(district_prices.items(), key=lambda x: x[1], reverse=True)
+    for name, d_price in sorted_d:
+        ratio = d_price / avg_price if avg_price > 0 else 1.0
+        zone_prices = [round(p * ratio * (1 + rng.gauss(0, 0.015))) for p in prices]
+        zone_volumes = [max(5, round(v * 0.06 * ratio * (1 + rng.gauss(0, 0.05)))) for v in volumes]
+        result[name] = {
+            "sub": f"{city_name}·{name}",
+            "district": name,
+            "prices": zone_prices,
+            "volumes": zone_volumes,
+            "rentYield": round(1.5 + (1 - ratio) * 1.5, 1),
+            "monthsOfSupply": round(12 * (2 - ratio), 1),
+            "premiumRate": round(0.87 + ratio * 0.08, 2),
+        }
+
+    return result
+
+
 def build_board_hot_zones(board_data: Dict[str, dict], city_prices: List[int],
                           city_name: str, seed: int = 0) -> dict:
     """构建板块级热门板块（全量，不做top N过滤）。
@@ -1207,11 +1248,11 @@ def main():
 
     need_towns = {"一线", "新一线"}
 
-    # 板块级爬取城市：一线 + 新一线 + 江苏 + 浙江
-    board_provinces = {"江苏省", "浙江省"}
+    # 板块级爬取城市：一线 + 新一线 + 指定城市
+    EXTRA_BOARD_CITIES = {"宁波", "泰州", "扬州", "昆山"}
     board_cities = set()
     for cn, cfg in TARGET_CITIES.items():
-        if cfg["tier"] in ("一线", "新一线") or cfg["province"] in board_provinces:
+        if cfg["tier"] in ("一线", "新一线") or cn in EXTRA_BOARD_CITIES:
             board_cities.add(cn)
     print(f"[CONFIG] 板块级爬取城市: {len(board_cities)}个")
 
@@ -1433,12 +1474,22 @@ def main():
             "area_rings": build_area_rings(
                 interp_prices, volumes, tier, city_name,
                 district_prices, cp_district_monthly, seed=hash(city_name)),
-            "hot_zones": board_hot_zones if board_hot_zones else build_hot_zones(
+        }
+
+        # hot_zones: 三级 fallback
+        if board_hot_zones:
+            cities_data[city_name]["hot_zones"] = board_hot_zones
+        elif city_name not in board_cities:
+            cities_data[city_name]["hot_zones"] = build_district_hot_zones(
+                interp_prices, volumes, city_name,
+                district_prices=district_prices,
+                seed=hash(city_name))
+        else:
+            cities_data[city_name]["hot_zones"] = build_hot_zones(
                 interp_prices, volumes, city_name, tier,
                 town_data=town_data,
                 district_prices=district_prices,
-                seed=hash(city_name)),
-        }
+                seed=hash(city_name))
 
         latest = interp_prices[-1]
         first = interp_prices[0]

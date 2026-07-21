@@ -213,6 +213,11 @@
       <view class="tag tag-{{hzInsight.cls}}">板块分化</view>
       <text class="fs12"> {{hzInsight.text}}</text>
     </view>
+    <scroll-view scroll-x class="hz-filter-bar" wx:if="{{hzShowFilter}}">
+      <text class="hz-filter-chip {{hzDistrictIdx === index ? 'active' : ''}}"
+            wx:for="{{hzDistricts}}" wx:key="*this"
+            bindtap="switchHzDistrict" data-idx="{{index}}">{{item}}</text>
+    </scroll-view>
     <view class="hz-sort-bar">
       <text class="fs10 text-muted">排序：</text>
       <text class="hz-sort-btn {{hzSort === 'price' ? 'active' : ''}}" bindtap="switchHzSort" data-sort="price">价格</text>
