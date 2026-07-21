@@ -3,10 +3,14 @@ var fmt = require('../../utils/format')
 var dataService = require('../../utils/data')
 var app = getApp()
 
+var PERIOD_MAP = { '6月': 7, '1年': 13, '2年': 25 }
+
 Page({
   data: {
     loaded: false,
     detailLoaded: false,
+    trendPeriod: '1年',
+    vpPeriod: '1年',
     cityName: '',
     tier: '',
     province: '',
@@ -394,7 +398,13 @@ Page({
   },
 
   onCityChartInit: function(e) {
-    var detail = e.detail
+    this._trendChartDetail = e.detail
+    this._drawTrendChartFromData()
+  },
+
+  _drawTrendChartFromData: function() {
+    var detail = this._trendChartDetail
+    if (!detail) return
     var ctx = detail.ctx
     var w = detail.width
     var h = detail.height
@@ -404,9 +414,10 @@ Page({
 
     if (!d || !nat) return
 
-    var months = fmt.monthsShort(g.meta.months).slice(-13)
-    var cityBc = fmt.baselineChange(d.prices.slice(-13))
-    var natBc = fmt.baselineChange(nat.prices.slice(-13))
+    var n = PERIOD_MAP[this.data.trendPeriod] || 13
+    var months = fmt.monthsShort(g.meta.months).slice(-n)
+    var cityBc = fmt.baselineChange(d.prices.slice(-n))
+    var natBc = fmt.baselineChange(nat.prices.slice(-n))
 
     this._drawTrendChart(ctx, w, h, months, [
       { data: natBc, color: '#aaa', width: 1.5, dash: [4, 2], label: '全国' },
@@ -415,17 +426,24 @@ Page({
   },
 
   onVpChartInit: function(e) {
-    var detail = e.detail
+    this._vpChartDetail = e.detail
+    this._drawVpChartFromData()
+  },
+
+  _drawVpChartFromData: function() {
+    var detail = this._vpChartDetail
+    if (!detail) return
     var ctx = detail.ctx
     var w = detail.width
     var h = detail.height
 
     if (!this._vpData) return
 
+    var n = PERIOD_MAP[this.data.vpPeriod] || 13
     var vd = this._vpData
-    var ps = vd.prices.slice(-13)
-    var vs = vd.volumes.slice(-13)
-    var months = vd.months.slice(-13)
+    var ps = vd.prices.slice(-n)
+    var vs = vd.volumes.slice(-n)
+    var months = vd.months.slice(-n)
 
     var pMin = Math.min.apply(null, ps)
     var pMax = Math.max.apply(null, ps)
@@ -520,7 +538,8 @@ Page({
     ctx.fillStyle = '#999'
     ctx.font = '9px sans-serif'
     ctx.textAlign = 'center'
-    for (var j = 0; j < months.length; j += 2) {
+    var step = months.length > 13 ? 3 : 2
+    for (var j = 0; j < months.length; j += step) {
       ctx.fillText(months[j], toX(j), h - 8)
     }
 
@@ -563,6 +582,45 @@ Page({
 
   toggleInactive: function() {
     this.setData({ showInactive: !this.data.showInactive })
+  },
+
+  switchTrendPeriod: function(e) {
+    var p = e.currentTarget.dataset.p
+    if (p === this.data.trendPeriod) return
+    this.setData({ trendPeriod: p })
+    this._drawTrendChartFromData()
+  },
+
+  switchVpPeriod: function(e) {
+    var p = e.currentTarget.dataset.p
+    if (p === this.data.vpPeriod) return
+    this.setData({ vpPeriod: p })
+    this._drawVpChartFromData()
+    this._rebuildVpTable()
+  },
+
+  _rebuildVpTable: function() {
+    if (!this._vpData) return
+    var n = PERIOD_MAP[this.data.vpPeriod] || 13
+    var vd = this._vpData
+    var ps = vd.prices.slice(-n)
+    var vs = vd.volumes.slice(-n)
+    var months = vd.months.slice(-n)
+    var table = []
+    for (var i = 0; i < ps.length; i++) {
+      var pc = i > 0 ? (ps[i] - ps[i - 1]) / ps[i - 1] * 100 : 0
+      var vc = i > 0 && vs[i - 1] > 0 ? (vs[i] - vs[i - 1]) / vs[i - 1] * 100 : 0
+      table.push({
+        month: months[i] || '',
+        price: ps[i].toLocaleString(),
+        pc: fmt.fc(pc),
+        pcCls: fmt.vcClass(pc),
+        vol: vs[i].toLocaleString(),
+        vc: fmt.fc(vc),
+        vcCls: fmt.vcClass(vc)
+      })
+    }
+    this.setData({ vpTable: table })
   },
 
   switchHzSort: function(e) {

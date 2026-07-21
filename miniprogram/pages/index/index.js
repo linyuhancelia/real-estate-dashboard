@@ -2,6 +2,8 @@ var algo = require('../../utils/algorithms')
 var fmt = require('../../utils/format')
 var app = getApp()
 
+var PERIOD_MAP = { '6月': 7, '1年': 13, '2年': 25 }
+
 Page({
   data: {
     loaded: false,
@@ -9,7 +11,8 @@ Page({
     natJudge: {},
     shJudge: {},
     shVsNat: '',
-    tierCards: []
+    tierCards: [],
+    period: '1年'
   },
 
   onLoad: function() {
@@ -47,11 +50,10 @@ Page({
       shVsNat: shVsNat
     })
 
-    this.buildTierCards(cities, nat, g.allPrices)
+    this.buildTierCards(cities)
   },
 
-  buildTierCards: function(cities, nat, allPrices) {
-    var tierOrder = ['一线', '新一线', '二线', '三线', '四线', '五线']
+  buildTierCards: function(cities) {
     var tierMap = {}
 
     Object.keys(cities).forEach(function(name) {
@@ -59,32 +61,19 @@ Page({
       var tier = c.tier
       if (!tierMap[tier]) tierMap[tier] = []
       var yc = algo.cC(c.prices, 12)
-      var mc = algo.cC(c.prices, 1)
       var tp = algo.cTp(c.prices, c.volumes)
       tierMap[tier].push({
         name: name,
         price: c.prices[c.prices.length - 1],
         yc: yc,
-        mc: mc,
         tp: tp,
         absYc: Math.abs(yc)
       })
     })
 
-    // merge 三四五线
-    var merged = {}
-    tierOrder.forEach(function(t) {
-      if (t === '三线' || t === '四线' || t === '五线') {
-        if (!merged['三四五线']) merged['三四五线'] = []
-        if (tierMap[t]) merged['三四五线'] = merged['三四五线'].concat(tierMap[t])
-      } else {
-        if (tierMap[t]) merged[t] = tierMap[t]
-      }
-    })
-
-    var displayOrder = ['一线', '新一线', '二线', '三四五线']
+    var displayOrder = ['一线', '新一线', '二线', '三线', '旅居', '特别行政区']
     var cards = displayOrder.map(function(tier) {
-      var list = merged[tier] || []
+      var list = tierMap[tier] || []
       if (list.length === 0) return null
       var count = list.length
       var avgPrice = Math.round(list.reduce(function(s, c) { return s + c.price }, 0) / count)
@@ -97,24 +86,34 @@ Page({
         tier: tier,
         count: count,
         avgPrice: avgPrice.toLocaleString(),
-        avgYc: avgYc,
         avgYcStr: fmt.fc(avgYc),
         avgYcCls: fmt.vcClass(avgYc),
         top1Name: top1.name,
-        top1Yc: top1.yc,
         top1YcStr: fmt.fc(top1.yc),
         top1YcCls: fmt.vcClass(top1.yc),
         top1TempL: top1.tp.l,
-        top1TempC: top1.tp.c,
-        top1TempS: top1.tp.s
+        top1TempC: top1.tp.c
       }
     }).filter(Boolean)
 
     this.setData({ tierCards: cards })
   },
 
+  switchPeriod: function(e) {
+    var p = e.currentTarget.dataset.p
+    if (p === this.data.period) return
+    this.setData({ period: p })
+    this._drawChart()
+  },
+
   onOvChartInit: function(e) {
-    var detail = e.detail
+    this._chartDetail = e.detail
+    this._drawChart()
+  },
+
+  _drawChart: function() {
+    var detail = this._chartDetail
+    if (!detail) return
     var ctx = detail.ctx
     var w = detail.width
     var h = detail.height
@@ -125,9 +124,10 @@ Page({
 
     if (!nat || !sh) return
 
-    var months = fmt.monthsShort(meta.months).slice(-13)
-    var natBc = fmt.baselineChange(nat.prices.slice(-13))
-    var shBc = fmt.baselineChange(sh.prices.slice(-13))
+    var n = PERIOD_MAP[this.data.period] || 13
+    var months = fmt.monthsShort(meta.months).slice(-n)
+    var natBc = fmt.baselineChange(nat.prices.slice(-n))
+    var shBc = fmt.baselineChange(sh.prices.slice(-n))
 
     var allVals = natBc.concat(shBc)
     var minV = Math.min.apply(null, allVals)
@@ -153,7 +153,8 @@ Page({
     ctx.fillStyle = '#999'
     ctx.font = '9px sans-serif'
     ctx.textAlign = 'center'
-    for (var j = 0; j < months.length; j += 2) {
+    var step = months.length > 13 ? 3 : 2
+    for (var j = 0; j < months.length; j += step) {
       ctx.fillText(months[j], toX(j), h - 8)
     }
 

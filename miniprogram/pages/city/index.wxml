@@ -70,7 +70,14 @@
 
   <!-- 趋势图 -->
   <view class="card">
-    <view class="section-title">价格趋势（基期变化率）</view>
+    <view class="section-header">
+      <text class="section-title">价格趋势（基期变化率）</text>
+      <view class="period-bar">
+        <text class="period-btn {{trendPeriod === '6月' ? 'active' : ''}}" bindtap="switchTrendPeriod" data-p="6月">6月</text>
+        <text class="period-btn {{trendPeriod === '1年' ? 'active' : ''}}" bindtap="switchTrendPeriod" data-p="1年">1年</text>
+        <text class="period-btn {{trendPeriod === '2年' ? 'active' : ''}}" bindtap="switchTrendPeriod" data-p="2年">2年</text>
+      </view>
+    </view>
     <view class="chart-box" style="height:220px">
       <f2-canvas canvasId="cityChart" height="220px" bind:bindinit="onCityChartInit"></f2-canvas>
     </view>
@@ -286,13 +293,20 @@
       <view class="mt8 text-muted fs11">{{vpDiag.hint}}</view>
     </view>
     <view class="card">
-      <view class="section-title">量价走势</view>
+      <view class="section-header">
+        <text class="section-title">量价走势</text>
+        <view class="period-bar">
+          <text class="period-btn {{vpPeriod === '6月' ? 'active' : ''}}" bindtap="switchVpPeriod" data-p="6月">6月</text>
+          <text class="period-btn {{vpPeriod === '1年' ? 'active' : ''}}" bindtap="switchVpPeriod" data-p="1年">1年</text>
+          <text class="period-btn {{vpPeriod === '2年' ? 'active' : ''}}" bindtap="switchVpPeriod" data-p="2年">2年</text>
+        </view>
+      </view>
       <view class="chart-box" style="height:240px">
         <f2-canvas canvasId="vpChart" height="240px" bind:bindinit="onVpChartInit"></f2-canvas>
       </view>
     </view>
     <view class="card vp-table">
-      <view class="section-title">近6月量价数据</view>
+      <view class="section-title">量价数据</view>
       <view class="vp-row vp-header-row">
         <text class="vp-cell fs10 fw600">月份</text>
         <text class="vp-cell fs10 fw600">均价</text>

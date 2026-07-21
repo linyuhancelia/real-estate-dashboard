@@ -46,8 +46,28 @@
 .section-title {
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 8px;
   color: #333;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.period-bar {
+  display: flex;
+  gap: 4px;
+}
+.period-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: #f5f5f5;
+  color: #999;
+}
+.period-btn.active {
+  background: #2980b9;
+  color: #fff;
 }
 .chart-box { position: relative; }
 

@@ -11,8 +11,13 @@
     </view>
     <view class="ov-hint text-muted fs10">{{shJudge.hint}}</view>
 
-    <!-- 趋势图 -->
-    <view class="chart-box" style="height:200px;margin-top:8px">
+    <!-- 时间筛选 + 趋势图 -->
+    <view class="period-bar">
+      <text class="period-btn {{period === '6月' ? 'active' : ''}}" bindtap="switchPeriod" data-p="6月">6月</text>
+      <text class="period-btn {{period === '1年' ? 'active' : ''}}" bindtap="switchPeriod" data-p="1年">1年</text>
+      <text class="period-btn {{period === '2年' ? 'active' : ''}}" bindtap="switchPeriod" data-p="2年">2年</text>
+    </view>
+    <view class="chart-box" style="height:200px">
       <f2-canvas canvasId="ovChart" height="200px" bind:bindinit="onOvChartInit"></f2-canvas>
     </view>
   </view>
@@ -20,7 +25,7 @@
   <!-- 类别聚合卡片 -->
   <view class="section-title">
     <text class="fw600 fs14">城市类别概览</text>
-    <text class="text-muted fs10">按类别聚合，标注Top1异动城市</text>
+    <text class="text-muted fs10">按类别聚合，标注Top1异动</text>
   </view>
 
   <view class="tier-grid">
@@ -32,7 +37,7 @@
       <view class="tc-avg">
         <view class="tc-price">
           <text class="mono fw600 fs15">{{item.avgPrice}}</text>
-          <text class="text-muted fs10"> 元/㎡ 均价</text>
+          <text class="text-muted fs10"> 元/㎡</text>
         </view>
         <view class="tc-yc">
           <text class="mono fw600 {{item.avgYcCls}}">{{item.avgYcStr}}</text>
