@@ -1476,18 +1476,12 @@ def main():
                 district_prices, cp_district_monthly, seed=hash(city_name)),
         }
 
-        # hot_zones: 三级 fallback
+        # hot_zones: 板块数据优先，否则行政区
         if board_hot_zones:
             cities_data[city_name]["hot_zones"] = board_hot_zones
-        elif city_name not in board_cities:
+        else:
             cities_data[city_name]["hot_zones"] = build_district_hot_zones(
                 interp_prices, volumes, city_name,
-                district_prices=district_prices,
-                seed=hash(city_name))
-        else:
-            cities_data[city_name]["hot_zones"] = build_hot_zones(
-                interp_prices, volumes, city_name, tier,
-                town_data=town_data,
                 district_prices=district_prices,
                 seed=hash(city_name))
 
