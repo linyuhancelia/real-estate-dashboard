@@ -99,6 +99,13 @@
   max-width: 60%;
   text-align: right;
 }
+.sig-fold {
+  text-align: center;
+  padding: 10px;
+}
+.sig-inactive {
+  opacity: 0.6;
+}
 
 /* M4 Property Types */
 .pt-card { padding: 12px 14px; }

@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/citytab/index",
     "pages/city/index",
     "pages/rankings/index",
     "pages/profile/index"
@@ -23,6 +24,12 @@
         "text": "大盘",
         "iconPath": "assets/tab-home.png",
         "selectedIconPath": "assets/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/citytab/index",
+        "text": "城市",
+        "iconPath": "assets/tab-city.png",
+        "selectedIconPath": "assets/tab-city-active.png"
       },
       {
         "pagePath": "pages/rankings/index",

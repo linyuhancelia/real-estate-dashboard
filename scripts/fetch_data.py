@@ -7,7 +7,7 @@
 - 成交量：基于价格趋势和城市规模的估算模型
 - 物业类型：基于城市均价的结构化拆分模型
 """
-import json, re, time, random, math, sys, traceback
+import json, re, time, random, math, sys, traceback, os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -625,6 +625,102 @@ class FangCrawler:
             print(f"[WARN] fang.com区域 {city_code}: {e}")
             return {}
 
+    def discover_boards(self, city_code: str) -> Dict[str, dict]:
+        """Discover all districts->boards mapping for a city via pageConfig.areaInfo."""
+        for attempt in range(3):
+            try:
+                s = requests.Session()
+                s.headers.update(FANG_MOBILE_HEADERS)
+                if attempt > 0:
+                    time.sleep(1 + attempt)
+                r = s.get(f'https://m.fang.com/fangjia/{city_code}/cityhouseprice.html',
+                          timeout=15)
+                if r.status_code != 200 or len(r.text) < 5000:
+                    continue
+                ep_match = re.search(r"echartsPriceData\s*=\s*'(\[.*?\])'", r.text, re.DOTALL)
+                if not ep_match:
+                    continue
+                ep_data = json.loads(ep_match.group(1))
+                dist_ids = []
+                for d in ep_data:
+                    if isinstance(d, str):
+                        if not d.strip():
+                            continue
+                        d = json.loads(d)
+                    did = d.get('districtId')
+                    if did:
+                        dist_ids.append(str(did))
+                if not dist_ids:
+                    continue
+                for did in dist_ids[:3]:
+                    r2 = s.get(f'https://m.fang.com/fangjia/{city_code}_list_{did}/',
+                               timeout=15)
+                    if r2.status_code != 200 or len(r2.text) < 5000:
+                        continue
+                    match = re.search(r"pageConfig\.areaInfo\s*=\s*'(\{.+?\})'\s*;", r2.text, re.DOTALL)
+                    if not match:
+                        match = re.search(r'pageConfig\.areaInfo\s*=\s*"(\{.+?\})"\s*;', r2.text, re.DOTALL)
+                    if not match:
+                        match = re.search(r"pageConfig\.areaInfo\s*=\s*(\{.+?\})\s*;\s*pageConfig", r2.text, re.DOTALL)
+                    if not match:
+                        continue
+                    raw = match.group(1)
+                    info = json.loads(raw)
+                    result = {}
+                    for dist_name, dist_data in info.items():
+                        if not isinstance(dist_data, dict):
+                            continue
+                        dist_id = dist_data.get('id') or dist_data.get('districtId')
+                        boards = []
+                        commerce = dist_data.get('comerce') or dist_data.get('commerce') or []
+                        for b in commerce:
+                            if isinstance(b, dict):
+                                bid = b.get('id') or b.get('areaId')
+                                bname = b.get('comareaName') or b.get('name') or b.get('areaName', '')
+                                if bid and bname:
+                                    boards.append({'id': str(bid), 'name': bname})
+                        if dist_id and boards:
+                            result[dist_name] = {'id': str(dist_id), 'boards': boards}
+                    if result:
+                        return result
+            except Exception as e:
+                if attempt == 2:
+                    print(f"[WARN] fang.com板块发现 {city_code}: {e}")
+        return {}
+
+    def fetch_board_prices(self, city_code: str, district_id: str, board_id: str) -> Dict[str, int]:
+        """Fetch 36-month monthly prices for a specific board via pageConfig.areaChartData3."""
+        try:
+            s = requests.Session()
+            s.headers.update(FANG_MOBILE_HEADERS)
+            url = f'https://m.fang.com/fangjia/{city_code}_list_{district_id}_{board_id}/'
+            r = s.get(url, timeout=15)
+            if r.status_code != 200:
+                return {}
+            for var_name in ['areaChartData3', 'areaChartData1', 'areaChartData']:
+                match = re.search(
+                    rf"pageConfig\.{var_name}\s*=\s*(\{{.*?\}})\s*;", r.text, re.DOTALL)
+                if match:
+                    raw = match.group(1)
+                    raw = re.sub(r"'", '"', raw)
+                    data = json.loads(raw)
+                    x = data.get('x', [])
+                    y1 = data.get('y1', [])
+                    if x and y1:
+                        prices = {}
+                        for month_label, price in zip(x, y1):
+                            if price and price > 0:
+                                parts = month_label.split('-')
+                                if len(parts) == 2:
+                                    key = f"20{parts[0]}/{parts[1]}"
+                                    prices[key] = int(price)
+                        if prices:
+                            return prices
+            return {}
+        except Exception as e:
+            print(f"[WARN] fang.com板块价格 {city_code}/{district_id}/{board_id}: {e}")
+            return {}
+
 
 # ===== 数据处理 =====
 def _prev_month_key(key):
@@ -925,6 +1021,90 @@ def build_hot_zones(prices: List[int], volumes: List[int],
     return result
 
 
+def build_board_hot_zones(board_data: Dict[str, dict], city_prices: List[int],
+                          city_name: str, seed: int = 0) -> dict:
+    """构建板块级热门板块（全量，不做top N过滤）。
+    board_data: {board_name: {district, prices: {month_key: price}}}
+    """
+    rng = random.Random(seed)
+    avg_price = city_prices[-1] if city_prices else 10000
+    result = {}
+    for board_name, binfo in board_data.items():
+        district = binfo.get('district', '')
+        monthly_prices = binfo.get('prices', {})
+        if not monthly_prices:
+            continue
+        sorted_months = sorted(monthly_prices.keys())
+        price_list = [monthly_prices[m] for m in sorted_months]
+        vol_list = [max(5, round(50 * (monthly_prices[m] / avg_price) *
+                    (1 + rng.gauss(0, 0.08)))) for m in sorted_months]
+        latest = price_list[-1] if price_list else avg_price
+        ratio = latest / avg_price if avg_price > 0 else 1.0
+        result[board_name] = {
+            "sub": f"{district}·{board_name}" if district else f"{city_name}·{board_name}",
+            "district": district,
+            "prices": price_list,
+            "months": sorted_months,
+            "volumes": vol_list,
+            "rentYield": round(1.5 + (1 - ratio) * 1.5, 1),
+            "monthsOfSupply": round(12 * (2 - ratio), 1),
+            "premiumRate": round(0.87 + ratio * 0.08, 2),
+        }
+    return result
+
+
+def output_two_layers(cities_data: dict, meta: dict, national: dict,
+                      data_dir: str, fang_city_codes: dict):
+    """Split cities_data into summary.json + per-city detail files."""
+    os.makedirs(os.path.join(data_dir, 'city'), exist_ok=True)
+
+    city_files = {}
+    for cn in cities_data:
+        key = fang_city_codes.get(cn, '')
+        if not key:
+            key = cn.lower().replace(' ', '')
+        city_files[cn] = key
+
+    summary_cities = {}
+    for cn, cd in cities_data.items():
+        summary_cities[cn] = {
+            'tier': cd.get('tier', ''),
+            'province': cd.get('province', ''),
+            'prices': cd.get('prices', []),
+            'volumes': cd.get('volumes', []),
+            'rentYield': cd.get('rentYield', 0),
+            'monthsOfSupply': cd.get('monthsOfSupply', 0),
+            'premiumRate': cd.get('premiumRate', 0),
+            'showingIndex': cd.get('showingIndex', 0),
+        }
+
+    summary_meta = {**meta, 'city_files': city_files}
+    summary = {'meta': summary_meta, 'national': national, 'cities': summary_cities}
+    summary_path = os.path.join(data_dir, 'summary.json')
+    with open(summary_path, 'w', encoding='utf-8') as f:
+        json.dump(summary, f, ensure_ascii=False, separators=(',', ':'))
+    print(f"[OUTPUT] summary.json: {os.path.getsize(summary_path) / 1024:.1f}KB")
+
+    for cn, cd in cities_data.items():
+        detail = {}
+        if cd.get('property_types'):
+            detail['property_types'] = cd['property_types']
+        if cd.get('area_rings'):
+            detail['area_rings'] = cd['area_rings']
+        if cd.get('hot_zones'):
+            detail['hot_zones'] = cd['hot_zones']
+        key = city_files[cn]
+        detail_path = os.path.join(data_dir, 'city', f'{key}.json')
+        with open(detail_path, 'w', encoding='utf-8') as f:
+            json.dump(detail, f, ensure_ascii=False, separators=(',', ':'))
+
+    total_size = sum(
+        os.path.getsize(os.path.join(data_dir, 'city', f))
+        for f in os.listdir(os.path.join(data_dir, 'city')) if f.endswith('.json')
+    )
+    print(f"[OUTPUT] city/ 目录: {len(cities_data)}个文件, 总计{total_size / 1024:.1f}KB")
+
+
 # ===== 香港特殊处理 =====
 def build_hk_data(num_months: int = 25) -> dict:
     rng = random.Random(42)
@@ -1027,6 +1207,14 @@ def main():
 
     need_towns = {"一线", "新一线"}
 
+    # 板块级爬取城市：一线 + 新一线 + 江苏 + 浙江
+    board_provinces = {"江苏省", "浙江省"}
+    board_cities = set()
+    for cn, cfg in TARGET_CITIES.items():
+        if cfg["tier"] in ("一线", "新一线") or cfg["province"] in board_provinces:
+            board_cities.add(cn)
+    print(f"[CONFIG] 板块级爬取城市: {len(board_cities)}个")
+
     for idx, (city_name, city_cfg) in enumerate(TARGET_CITIES.items()):
         tier = city_cfg["tier"]
         print(f"\n[{idx+1}/{total}] 处理 {city_name} ({tier})...", flush=True)
@@ -1097,7 +1285,7 @@ def main():
 
         cp_district_map = {}
         cp_district_monthly = {}
-        if cp_city_code and tier in need_towns:
+        if cp_city_code and city_name in board_cities:
             print(f"  [CREPRICE] 爬取区域数据...", end=" ", flush=True)
             cp_district_map = creprice.discover_districts(cp_city_code)
             creprice._delay(long=True)
@@ -1168,7 +1356,7 @@ def main():
                 print(f"  发现{len(all_towns)}个板块")
 
         # 板块不足时用fang.com区级数据补充
-        if tier in need_towns and (not town_data or len(town_data) < 6) and fang_districts:
+        if city_name in board_cities and (not town_data or len(town_data) < 6) and fang_districts:
             if not town_data:
                 town_data = {}
             existing_districts = {v.get('district', '') for v in town_data.values()} if town_data else set()
@@ -1187,7 +1375,44 @@ def main():
             if town_data:
                 print(f"  [FANG补充] 板块总计{len(town_data)}个")
 
-        # === Step 6: 构建输出 ===
+        # === Step 6a: fang.com 板块级数据 ===
+        board_hot_zones = None
+        if fang_city_code and city_name in board_cities:
+            print(f"  [FANG] 爬取板块级数据...", end=" ", flush=True)
+            time.sleep(3)
+            board_mapping = fang.discover_boards(fang_city_code)
+            time.sleep(0.5)
+            if board_mapping:
+                all_boards = []
+                for dist_name, dist_info in board_mapping.items():
+                    for b in dist_info['boards']:
+                        all_boards.append((dist_name, dist_info['id'], b))
+                max_boards = 200
+                total_boards = len(all_boards)
+                if total_boards > max_boards:
+                    all_boards = all_boards[:max_boards]
+                print(f"发现{len(board_mapping)}区/{total_boards}板块(爬取{len(all_boards)})", flush=True)
+                board_data = {}
+                crawled = 0
+                for dist_name, dist_id, b in all_boards:
+                    bp = fang.fetch_board_prices(fang_city_code, dist_id, b['id'])
+                    time.sleep(random.uniform(0.15, 0.35))
+                    crawled += 1
+                    if bp:
+                        board_data[b['name']] = {
+                            'district': dist_name,
+                            'prices': bp,
+                        }
+                    if crawled % 50 == 0:
+                        print(f"    进度: {crawled}/{len(all_boards)}", flush=True)
+                if board_data:
+                    board_hot_zones = build_board_hot_zones(
+                        board_data, interp_prices, city_name, seed=hash(city_name))
+                    print(f"  [FANG] 板块数据: {len(board_hot_zones)}个板块有效")
+            else:
+                print("未找到板块映射", flush=True)
+
+        # === Step 7: 构建输出 ===
         volumes = estimate_volumes(interp_prices, tier, base_seed=hash(city_name))
 
         latest_price = interp_prices[-1]
@@ -1208,7 +1433,7 @@ def main():
             "area_rings": build_area_rings(
                 interp_prices, volumes, tier, city_name,
                 district_prices, cp_district_monthly, seed=hash(city_name)),
-            "hot_zones": build_hot_zones(
+            "hot_zones": board_hot_zones if board_hot_zones else build_hot_zones(
                 interp_prices, volumes, city_name, tier,
                 town_data=town_data,
                 district_prices=district_prices,
@@ -1247,7 +1472,7 @@ def main():
                 "volumes": "基于价格趋势和城市规模的估算模型，非真实成交数据",
                 "property_types": "基于城市均价的结构化拆分，比例参考公开研究",
                 "area_rings": "一线/新一线按地理环线映射，其他城市按价格分档",
-                "hot_zones": "一线/新一线用镇/街道级板块数据，其他城市用行政区",
+                "hot_zones": "一线/新一线/江浙城市用板块级36个月数据，其他城市用行政区",
                 "metrics": "租售比/去化周期/溢价率为估算值，仅供参考",
             }
         },
@@ -1266,8 +1491,13 @@ def main():
     print(f"\n{'='*60}")
     print(f"[DONE] 成功: {success_count}, 失败: {fail_count}")
     print(f"[DONE] 输出: {out_path} ({sz/1024:.0f}KB)")
+    board_count = sum(1 for c in cities_data.values() if len(c.get('hot_zones', {})) > 10)
+    print(f"[DONE] 板块级城市: {board_count}个")
 
-    for check_city in ["上海", "北京", "深圳", "广州"]:
+    output_two_layers(cities_data, output["meta"], output["national"],
+                      str(DATA_DIR), FANG_CITY_CODES)
+
+    for check_city in ["上海", "北京", "深圳", "广州", "杭州", "南京", "苏州"]:
         if check_city in cities_data:
             c = cities_data[check_city]
             p0, p1 = c["prices"][0], c["prices"][-1]

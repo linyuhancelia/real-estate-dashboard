@@ -17,48 +17,41 @@
     </view>
   </view>
 
-  <!-- 筛选栏 -->
-  <view class="filter-bar">
-    <picker mode="selector" range="{{provinces}}" bindchange="onProvChange">
-      <view class="filter-btn {{fProv ? 'active' : ''}}">{{fProv || '省份'}} ▾</view>
-    </picker>
-    <picker mode="selector" range="{{tiers}}" bindchange="onTierChange">
-      <view class="filter-btn {{fTier ? 'active' : ''}}">{{fTier || '类别'}} ▾</view>
-    </picker>
-    <input class="filter-search" placeholder="搜索城市" bindinput="onSearch" value="{{fSch}}" />
-    <view class="filter-btn reset" wx:if="{{fProv || fTier || fSch}}" bindtap="resetFilter">重置</view>
+  <!-- 类别聚合卡片 -->
+  <view class="section-title">
+    <text class="fw600 fs14">城市类别概览</text>
+    <text class="text-muted fs10">按类别聚合，标注Top1异动城市</text>
   </view>
 
-  <!-- M2 城市列表 -->
-  <scroll-view scroll-y class="city-list" enable-back-to-top>
-    <view
-      class="city-item"
-      wx:for="{{filteredCities}}"
-      wx:key="name"
-      bindtap="onCityTap"
-      data-name="{{item.name}}"
-    >
-      <view class="ci-left">
-        <view class="ci-name">{{item.name}}</view>
-        <view class="ci-meta text-muted fs10">{{item.tier}}·{{item.province}}</view>
+  <view class="tier-grid">
+    <view class="card tier-card" wx:for="{{tierCards}}" wx:key="tier">
+      <view class="tc-header">
+        <text class="tc-tier fw600">{{item.tier}}</text>
+        <text class="tc-count text-muted fs10">{{item.count}}城</text>
       </view>
-      <view class="ci-center">
-        <view class="ci-price mono fw600">{{item.priceStr}}</view>
-        <view class="ci-change mono {{item.ycClass}}">{{item.ycStr}}</view>
+      <view class="tc-avg">
+        <view class="tc-price">
+          <text class="mono fw600 fs15">{{item.avgPrice}}</text>
+          <text class="text-muted fs10"> 元/㎡ 均价</text>
+        </view>
+        <view class="tc-yc">
+          <text class="mono fw600 {{item.avgYcCls}}">{{item.avgYcStr}}</text>
+          <text class="text-muted fs10"> 年变化</text>
+        </view>
       </view>
-      <view class="ci-right">
-        <view class="tag tag-{{item.tempClass}}">{{item.tempLabel}} {{item.tempScore}}</view>
+      <view class="tc-top1" bindtap="onTop1Tap" data-name="{{item.top1Name}}">
+        <view class="tc-top1-label">
+          <text class="fs10 text-muted">Top1 异动</text>
+          <view class="tag tag-{{item.top1TempC}}" style="margin-left:6px">{{item.top1TempL}}</view>
+        </view>
+        <view class="tc-top1-city">
+          <text class="fw600 fs13">{{item.top1Name}}</text>
+          <text class="mono fw600 {{item.top1YcCls}}" style="margin-left:8px">{{item.top1YcStr}}</text>
+          <text class="fs10" style="color:#2980b9;margin-left:auto">详情 ></text>
+        </view>
       </view>
     </view>
-
-    <view class="show-more" wx:if="{{!showAll && totalCount > filteredCities.length}}" bindtap="showAllCities">
-      展开全部 {{totalCount}} 城 ▾
-    </view>
-
-    <view class="loading-center" wx:if="{{filteredCities.length === 0}}">
-      <text class="text-muted fs12">没有匹配的城市</text>
-    </view>
-  </scroll-view>
+  </view>
 </view>
 
 <!-- Loading -->

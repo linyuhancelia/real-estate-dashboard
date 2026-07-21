@@ -9,14 +9,7 @@ Page({
     natJudge: {},
     shJudge: {},
     shVsNat: '',
-    provinces: [],
-    tiers: [],
-    fProv: '',
-    fTier: '',
-    fSch: '',
-    showAll: false,
-    filteredCities: [],
-    totalCount: 0
+    tierCards: []
   },
 
   onLoad: function() {
@@ -37,7 +30,6 @@ Page({
     var nat = g.national
     var cities = g.cities
     var sh = cities['上海']
-    var allPrices = g.allPrices
 
     var natJudge = algo.mktJudge(nat.prices, nat.volumes)
     var shJudge = sh ? algo.mktJudge(sh.prices, sh.volumes) : { verdict: '—', cls: 'ti', detail: '', hint: '' }
@@ -47,78 +39,78 @@ Page({
     var diff = Math.abs(syc - nyc).toFixed(1)
     var shVsNat = (syc > nyc ? '跑赢' : '跑输') + '全国' + diff + 'pp'
 
-    var provinces = [''].concat(g.meta.provinces || [])
-    var tiers = [''].concat(g.meta.tiers || [])
-
     this.setData({
       loaded: true,
       updateTime: g.meta.generated_at || '',
       natJudge: natJudge,
       shJudge: shJudge,
-      shVsNat: shVsNat,
-      provinces: provinces,
-      tiers: tiers
+      shVsNat: shVsNat
     })
 
-    this._cities = cities
-    this._nat = nat
-    this._allPrices = allPrices
-    this.updateCityList()
+    this.buildTierCards(cities, nat, g.allPrices)
   },
 
-  updateCityList: function() {
-    var cities = this._cities
-    if (!cities) return
-    var nat = this._nat
-    var allPrices = this._allPrices
-    var fProv = this.data.fProv
-    var fTier = this.data.fTier
-    var fSch = this.data.fSch
-    var showAll = this.data.showAll
-    var topTiers = { '一线': 1, '新一线': 1 }
+  buildTierCards: function(cities, nat, allPrices) {
+    var tierOrder = ['一线', '新一线', '二线', '三线', '四线', '五线']
+    var tierMap = {}
 
-    var list = Object.keys(cities).map(function(name) {
+    Object.keys(cities).forEach(function(name) {
       var c = cities[name]
-      return {
-        name: name,
-        tier: c.tier,
-        province: c.province,
-        prices: c.prices,
-        volumes: c.volumes,
-        price: c.prices[c.prices.length - 1]
-      }
-    })
-
-    if (fProv) list = list.filter(function(c) { return c.province === fProv })
-    if (fTier) list = list.filter(function(c) { return c.tier === fTier })
-    if (fSch) list = list.filter(function(c) { return c.name.indexOf(fSch) >= 0 })
-
-    var totalCount = list.length
-
-    if (!showAll && !fProv && !fTier && !fSch) {
-      list = list.filter(function(c) { return topTiers[c.tier] })
-    }
-
-    var items = list.map(function(c) {
+      var tier = c.tier
+      if (!tierMap[tier]) tierMap[tier] = []
       var yc = algo.cC(c.prices, 12)
+      var mc = algo.cC(c.prices, 1)
       var tp = algo.cTp(c.prices, c.volumes)
-      return {
-        name: c.name,
-        tier: c.tier,
-        province: c.province,
-        priceStr: c.price.toLocaleString(),
-        ycStr: fmt.fc(yc),
-        ycClass: fmt.vcClass(yc),
-        tempLabel: tp.l,
-        tempScore: tp.s,
-        tempClass: tp.c
+      tierMap[tier].push({
+        name: name,
+        price: c.prices[c.prices.length - 1],
+        yc: yc,
+        mc: mc,
+        tp: tp,
+        absYc: Math.abs(yc)
+      })
+    })
+
+    // merge 三四五线
+    var merged = {}
+    tierOrder.forEach(function(t) {
+      if (t === '三线' || t === '四线' || t === '五线') {
+        if (!merged['三四五线']) merged['三四五线'] = []
+        if (tierMap[t]) merged['三四五线'] = merged['三四五线'].concat(tierMap[t])
+      } else {
+        if (tierMap[t]) merged[t] = tierMap[t]
       }
     })
 
-    this.setData({
-      filteredCities: items,
-      totalCount: totalCount
-    })
+    var displayOrder = ['一线', '新一线', '二线', '三四五线']
+    var cards = displayOrder.map(function(tier) {
+      var list = merged[tier] || []
+      if (list.length === 0) return null
+      var count = list.length
+      var avgPrice = Math.round(list.reduce(function(s, c) { return s + c.price }, 0) / count)
+      var avgYc = list.reduce(function(s, c) { return s + c.yc }, 0) / count
+
+      list.sort(function(a, b) { return b.absYc - a.absYc })
+      var top1 = list[0]
+
+      return {
+        tier: tier,
+        count: count,
+        avgPrice: avgPrice.toLocaleString(),
+        avgYc: avgYc,
+        avgYcStr: fmt.fc(avgYc),
+        avgYcCls: fmt.vcClass(avgYc),
+        top1Name: top1.name,
+        top1Yc: top1.yc,
+        top1YcStr: fmt.fc(top1.yc),
+        top1YcCls: fmt.vcClass(top1.yc),
+        top1TempL: top1.tp.l,
+        top1TempC: top1.tp.c,
+        top1TempS: top1.tp.s
+      }
+    }).filter(Boolean)
+
+    this.setData({ tierCards: cards })
   },
 
   onOvChartInit: function(e) {
@@ -196,34 +188,9 @@ Page({
     ctx.fillText('全国', padL + 40, padT - 6)
   },
 
-  onCityTap: function(e) {
+  onTop1Tap: function(e) {
     var name = e.currentTarget.dataset.name
     wx.navigateTo({ url: '/pages/city/index?name=' + encodeURIComponent(name) })
-  },
-
-  onProvChange: function(e) {
-    this.setData({ fProv: this.data.provinces[e.detail.value] || '', showAll: true })
-    this.updateCityList()
-  },
-
-  onTierChange: function(e) {
-    this.setData({ fTier: this.data.tiers[e.detail.value] || '', showAll: true })
-    this.updateCityList()
-  },
-
-  onSearch: function(e) {
-    this.setData({ fSch: e.detail.value, showAll: true })
-    this.updateCityList()
-  },
-
-  resetFilter: function() {
-    this.setData({ fProv: '', fTier: '', fSch: '', showAll: false })
-    this.updateCityList()
-  },
-
-  showAllCities: function() {
-    this.setData({ showAll: true })
-    this.updateCityList()
   },
 
   onShareAppMessage: function() {

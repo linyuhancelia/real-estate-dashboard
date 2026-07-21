@@ -80,21 +80,33 @@ Page({
       }
     })
 
-    var rsList = items.slice().sort(function(a, b) { return b.rs - a.rs })
+    function copyItems(arr) {
+      return arr.map(function(it) {
+        return {
+          name: it.name, tier: it.tier, province: it.province,
+          price: it.price, priceStr: it.priceStr, rs: it.rs,
+          yc: it.yc, ycStr: it.ycStr, ycCls: it.ycCls,
+          rentYield: it.rentYield, monthsOfSupply: it.monthsOfSupply,
+          isFav: it.isFav
+        }
+      })
+    }
+
+    var rsList = copyItems(items).sort(function(a, b) { return b.rs - a.rs })
     rsList.forEach(function(it, i) {
       it.rank = i + 1
       it.val = it.rs.toString()
       it.valColor = it.rs >= 60 ? '#2d8c4e' : it.rs >= 40 ? '#e67e22' : '#c0392b'
     })
 
-    var ryList = items.slice().sort(function(a, b) { return b.rentYield - a.rentYield })
+    var ryList = copyItems(items).sort(function(a, b) { return b.rentYield - a.rentYield })
     ryList.forEach(function(it, i) {
       it.rank = i + 1
       it.val = it.rentYield + '%'
       it.valColor = it.rentYield >= 3 ? '#2d8c4e' : it.rentYield >= 2 ? '#e67e22' : '#c0392b'
     })
 
-    var mssList = items.slice().sort(function(a, b) { return a.monthsOfSupply - b.monthsOfSupply })
+    var mssList = copyItems(items).sort(function(a, b) { return a.monthsOfSupply - b.monthsOfSupply })
     mssList.forEach(function(it, i) {
       it.rank = i + 1
       it.val = it.monthsOfSupply + '月'

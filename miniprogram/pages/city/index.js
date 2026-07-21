@@ -23,6 +23,9 @@ Page({
     judge: {},
     activeTab: 'signal',
     signalTargets: [],
+    inactiveSignals: [],
+    inactiveCount: 0,
+    showInactive: false,
     sigSummary: {},
     ptList: [],
     ptInsight: null,
@@ -116,7 +119,16 @@ Page({
     var cls = rcPct > 30 ? 'tp' : stPct > 40 ? 'tn' : sdPct > 40 ? 'tn' : 'tng'
 
     this.setData({
-      signalTargets: signalTargets,
+      signalTargets: signalTargets.filter(function(t) {
+        return t.s.sd || t.s.st || t.s.rc
+      }),
+      inactiveSignals: signalTargets.filter(function(t) {
+        return !t.s.sd && !t.s.st && !t.s.rc
+      }),
+      inactiveCount: signalTargets.filter(function(t) {
+        return !t.s.sd && !t.s.st && !t.s.rc
+      }).length,
+      showInactive: false,
       sigSummary: { text: text, verdict: verdict, cls: cls }
     })
   },
@@ -547,6 +559,10 @@ Page({
   switchTab: function(e) {
     var tab = e.currentTarget.dataset.tab
     this.setData({ activeTab: tab })
+  },
+
+  toggleInactive: function() {
+    this.setData({ showInactive: !this.data.showInactive })
   },
 
   switchHzSort: function(e) {

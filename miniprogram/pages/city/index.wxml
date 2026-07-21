@@ -114,6 +114,34 @@
         <text class="fs10 text-muted sc-detail">{{item.d.rc}}</text>
       </view>
     </view>
+
+    <view class="sig-fold" wx:if="{{inactiveCount > 0}}" bindtap="toggleInactive">
+      <text class="fs12 text-muted">{{showInactive ? '收起' : inactiveCount + '个暂无信号'}} {{showInactive ? '▴' : '▾'}}</text>
+    </view>
+
+    <block wx:if="{{showInactive}}">
+      <view class="card signal-card sig-inactive" wx:for="{{inactiveSignals}}" wx:key="name">
+        <view class="sc-name">
+          <text class="fw600">{{item.name}}</text>
+          <text class="text-muted fs10"> {{item.type}}</text>
+        </view>
+        <view class="sc-row">
+          <view class="signal-dot signal-off"></view>
+          <text class="fs11 fw600">止跌</text>
+          <text class="fs10 text-muted sc-detail">{{item.d.sd}}</text>
+        </view>
+        <view class="sc-row">
+          <view class="signal-dot signal-off"></view>
+          <text class="fs11 fw600">走平</text>
+          <text class="fs10 text-muted sc-detail">{{item.d.st}}</text>
+        </view>
+        <view class="sc-row">
+          <view class="signal-dot signal-off"></view>
+          <text class="fs11 fw600">回升</text>
+          <text class="fs10 text-muted sc-detail">{{item.d.rc}}</text>
+        </view>
+      </view>
+    </block>
   </view>
 
   <!-- 加载中（非信号tab） -->

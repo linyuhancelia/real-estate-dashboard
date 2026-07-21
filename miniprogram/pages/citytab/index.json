@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "f2-canvas": "../../components/f2-canvas/f2-canvas"
+  },
+  "navigationBarTitleText": "城市详情"
+}

@@ -1,0 +1,94 @@
+<view class="page" wx:if="{{loaded}}">
+  <!-- 城市选择器 -->
+  <view class="ct-picker">
+    <view class="ct-fav-bar" wx:if="{{favCities.length > 0}}">
+      <text class="ct-fav-item {{currentCity === item ? 'active' : ''}}" wx:for="{{favCities}}" wx:key="*this" bindtap="onSelectCity" data-name="{{item}}">{{item}}</text>
+    </view>
+    <view class="ct-search-bar">
+      <input class="ct-search" placeholder="搜索城市" bindinput="onSearch" value="{{searchText}}" />
+      <picker mode="selector" range="{{allCityNames}}" bindchange="onPickerChange">
+        <view class="ct-picker-btn">选择 ▾</view>
+      </picker>
+    </view>
+    <scroll-view scroll-x class="ct-suggest" wx:if="{{suggestions.length > 0}}">
+      <text class="ct-suggest-item" wx:for="{{suggestions}}" wx:key="*this" bindtap="onSelectCity" data-name="{{item}}">{{item}}</text>
+    </scroll-view>
+  </view>
+
+  <!-- 城市详情内容 (复用 city 页面的结构) -->
+  <view class="card city-profile" wx:if="{{cityLoaded}}">
+    <view class="cp-top">
+      <view>
+        <view class="cp-name">{{cityName}}</view>
+        <view class="cp-meta text-muted fs11">{{tier}}·{{province}}</view>
+      </view>
+      <view class="tag tag-{{temp.c}}">{{temp.l}} {{temp.s}}</view>
+    </view>
+
+    <view class="cp-price">
+      <text class="cp-price-num mono fw700">{{priceStr}}</text>
+      <text class="cp-price-unit text-muted fs10">元/㎡</text>
+    </view>
+
+    <view class="cp-metrics">
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">租售比</text>
+        <text class="cp-mv fw600">{{rentYield}}%</text>
+      </view>
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">去化</text>
+        <text class="cp-mv fw600">{{monthsOfSupply}}月</text>
+      </view>
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">溢价率</text>
+        <text class="cp-mv fw600">{{premiumRate}}%</text>
+      </view>
+      <view class="cp-metric">
+        <text class="cp-ml text-muted">带看</text>
+        <text class="cp-mv fw600">{{showingIndex}}</text>
+      </view>
+    </view>
+
+    <view class="cp-changes">
+      <view class="cp-chg" wx:for="{{changes}}" wx:key="label">
+        <text class="cp-chg-label text-muted">{{item.label}}</text>
+        <text class="cp-chg-val mono {{item.cls}}">{{item.val}}</text>
+      </view>
+    </view>
+
+    <view class="cp-signals">
+      <view class="cp-sig">
+        <view class="signal-dot {{signals.sd ? 'signal-on' : 'signal-off'}}"></view>
+        <text class="fs11">止跌</text>
+      </view>
+      <view class="cp-sig">
+        <view class="signal-dot {{signals.st ? 'signal-on' : signals.sd ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs11">走平</text>
+      </view>
+      <view class="cp-sig">
+        <view class="signal-dot {{signals.rc ? 'signal-on' : signals.st ? 'signal-pending' : 'signal-off'}}"></view>
+        <text class="fs11">回升</text>
+      </view>
+      <view class="cp-rs">
+        <text class="cp-rs-val mono fw700" style="color:{{rsColor}}">{{rs}}</text>
+        <text class="fs10 text-muted">RS·跑赢{{rs}}%</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 结论卡 -->
+  <view class="card insight-box" wx:if="{{cityLoaded}}">
+    <view class="tag tag-{{judge.cls}}">{{judge.verdict}}</view>
+    <text class="fs12" style="margin-left:8px">{{judge.detail}}</text>
+    <view class="mt8 text-muted fs11">{{judge.hint}}</view>
+  </view>
+
+  <!-- 查看更多 -->
+  <view class="ct-more" wx:if="{{cityLoaded}}" bindtap="goFullDetail">
+    <text class="fs13" style="color:#2980b9">查看完整详情（物业·板块·区域·量价）></text>
+  </view>
+</view>
+
+<view class="loading-center" wx:else>
+  <text>加载中...</text>
+</view>

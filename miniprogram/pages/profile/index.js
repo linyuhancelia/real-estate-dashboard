@@ -13,7 +13,7 @@ Page({
     updateTime: '',
     cityCount: 0,
     cacheSize: '',
-    showMethod: false,
+    showMethod: true,
     allCityNames: []
   },
 
