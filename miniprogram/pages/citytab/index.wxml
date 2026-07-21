@@ -104,11 +104,11 @@
       </view>
     </view>
 
-    <!-- Sub-tabs: 物业 → 板块 → 区域 → 信号灯 -->
+    <!-- Sub-tabs: 物业 → 区域 → 板块 → 信号灯 -->
     <view class="tab-bar">
       <view class="tab-item {{activeTab === 'property' ? 'active' : ''}}" bindtap="switchTab" data-tab="property">物业</view>
-      <view class="tab-item {{activeTab === 'hotzone' ? 'active' : ''}}" bindtap="switchTab" data-tab="hotzone">板块</view>
       <view class="tab-item {{activeTab === 'area' ? 'active' : ''}}" bindtap="switchTab" data-tab="area">区域</view>
+      <view class="tab-item {{activeTab === 'hotzone' ? 'active' : ''}}" bindtap="switchTab" data-tab="hotzone">板块</view>
       <view class="tab-item {{activeTab === 'signal' ? 'active' : ''}}" bindtap="switchTab" data-tab="signal">信号灯</view>
     </view>
 
