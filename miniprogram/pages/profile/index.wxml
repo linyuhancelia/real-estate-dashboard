@@ -83,7 +83,7 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">信号灯体系</text>
-      <text class="fs11 text-muted">止跌→走平→回升三级递进，基于斜率/动量/均线/量价多维度判定</text>
+      <text class="fs11 text-muted">止跌：近3月跌幅收窄至-1%以内且月环比转正；走平：连续2月环比波动在±0.5%以内；回升：近3月累计涨幅>1%且成交量同比正增长。信号逐级递进，覆盖城市整体、物业类型、板块等多个维度</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">mktJudge综合判断</text>
@@ -91,11 +91,15 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">量价诊断</text>
-      <text class="fs11 text-muted">分析近期价格与成交量的联动关系：量价齐升/价升量缩/量升价跌/量价齐跌/缩量盘整</text>
+      <text class="fs11 text-muted">分析近期价格与成交量的联动关系：量价齐升（健康上行）/价升量缩（缺乏量能支撑）/量升价跌（以价换量）/量价齐跌（深度调整）/缩量盘整（观望僵持）。已融合至物业、板块、信号灯各维度展示</text>
+    </view>
+    <view class="method-item">
+      <text class="fw600 fs12">异动城市</text>
+      <text class="fs11 text-muted">大盘页Top1异动城市取近3月绝对变化最大的城市，已过滤数据异常（连续相同价格、单月跳变>15%等情况自动剔除），确保展示结果可信</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">数据说明</text>
-      <text class="fs11 text-muted">成交量为估算模型，租售比/去化周期/溢价率为参考值。所有分析仅供参考，不构成投资建议</text>
+      <text class="fs11 text-muted">三源交叉验证（安居客+房价行情+房天下）。成交量为估算模型，租售比/去化周期/溢价率为参考值。每周日自动更新。所有分析仅供参考，不构成投资建议</text>
     </view>
   </view>
 

@@ -8,10 +8,11 @@
       <picker mode="selector" range="{{provinces}}" bindchange="onProvChange">
         <view class="ct-filter-btn {{fProv ? 'active' : ''}}">{{fProv || '省份'}} ▾</view>
       </picker>
-      <picker mode="selector" range="{{tiers}}" bindchange="onTierChange">
-        <view class="ct-filter-btn {{fTier ? 'active' : ''}}">{{fTier || '类别'}} ▾</view>
+      <picker mode="selector" range="{{provCities}}" bindchange="onCityPick">
+        <view class="ct-filter-btn {{fCity ? 'active' : ''}}">{{fCity || '城市'}} ▾</view>
       </picker>
       <input class="ct-search" placeholder="搜索城市" bindinput="onSearch" value="{{searchText}}" />
+      <view class="ct-search-btn" bindtap="onSearchConfirm">搜索</view>
     </view>
     <scroll-view scroll-x class="ct-suggest" wx:if="{{suggestions.length > 0}}">
       <text class="ct-suggest-item" wx:for="{{suggestions}}" wx:key="*this" bindtap="onSelectCity" data-name="{{item}}">{{item}}</text>
@@ -129,7 +130,10 @@
             <text class="fw600">{{item.name}}</text>
             <text class="text-muted fs10"> {{item.desc}}</text>
           </view>
-          <view class="tag tag-{{item.tempCls}}">{{item.tempLabel}} {{item.tempScore}}</view>
+          <view style="display:flex;gap:4px;align-items:center">
+            <view class="tag tag-{{item.vpCls}}" wx:if="{{item.vpLabel}}" style="font-size:10px">{{item.vpLabel}}</view>
+            <view class="tag tag-{{item.tempCls}}">{{item.tempLabel}} {{item.tempScore}}</view>
+          </view>
         </view>
         <view class="pt-price">
           <text class="mono fw700">{{item.priceStr}}</text>
@@ -241,6 +245,13 @@
 
     <!-- 信号灯 -->
     <view wx:if="{{activeTab === 'signal'}}">
+      <view class="card sig-method">
+        <text class="fw600 fs12">信号灯判断逻辑</text>
+        <text class="fs11 text-muted"> · 止跌：近3月跌幅收窄至-1%以内且月环比转正</text>
+        <text class="fs11 text-muted"> · 走平：连续2月环比波动在±0.5%以内</text>
+        <text class="fs11 text-muted"> · 回升：近3月累计涨幅>1%且成交量同比正增长</text>
+      </view>
+
       <view class="card signal-summary insight-box">
         <view class="tag tag-{{sigSummary.cls}}">{{cityName}}信号</view>
         <text class="fs12"> {{sigSummary.text}}</text>
@@ -251,6 +262,7 @@
         <view class="sc-name">
           <text class="fw600">{{item.name}}</text>
           <text class="text-muted fs10"> {{item.type}}</text>
+          <view class="tag tag-{{item.vpCls}}" wx:if="{{item.vpLabel}}" style="margin-left:8px;font-size:10px">{{item.vpLabel}}</view>
         </view>
         <view class="sc-row">
           <view class="signal-dot {{item.s.sd ? 'signal-on' : 'signal-off'}}"></view>
@@ -270,7 +282,7 @@
       </view>
 
       <view class="sig-fold" wx:if="{{inactiveCount > 0}}" bindtap="toggleInactive">
-        <text class="fs12 text-muted">{{showInactive ? '收起' : inactiveCount + '个暂无信号'}} {{showInactive ? '▴' : '▾'}}</text>
+        <text class="sig-fold-btn">{{showInactive ? '▴ 收起详情' : '▾ 展开查看' + inactiveCount + '个暂无信号的子市场'}}</text>
       </view>
 
       <block wx:if="{{showInactive}}">

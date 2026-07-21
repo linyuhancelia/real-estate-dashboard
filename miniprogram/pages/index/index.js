@@ -4,6 +4,21 @@ var app = getApp()
 
 var PERIOD_MAP = { '6月': 7, '1年': 13, '2年': 25 }
 
+function isDataReliable(prices) {
+  if (!prices || prices.length < 6) return false
+  var recent = prices.slice(-6)
+  var same = 0
+  for (var i = 1; i < recent.length; i++) {
+    if (recent[i] === recent[i - 1]) same++
+  }
+  if (same >= 3) return false
+  for (var j = 1; j < recent.length; j++) {
+    var chg = Math.abs((recent[j] - recent[j - 1]) / recent[j - 1])
+    if (chg > 0.15) return false
+  }
+  return true
+}
+
 Page({
   data: {
     loaded: false,
@@ -12,6 +27,7 @@ Page({
     shJudge: {},
     shVsNat: '',
     top1Name: '',
+    top1Text: '',
     tierCards: [],
     period: '1年'
   },
@@ -43,19 +59,26 @@ Page({
     var diff = Math.abs(syc - nyc).toFixed(1)
     var shVsNat = (syc > nyc ? '跑赢' : '跑输') + '全国' + diff + 'pp'
 
-    // find Top1 anomaly city (largest absolute year change)
     var top1 = null
-    var maxAbsYc = 0
+    var maxAbs3m = 0
     Object.keys(cities).forEach(function(name) {
       if (name === '上海') return
       var c = cities[name]
-      var yc = Math.abs(algo.cC(c.prices, 12))
-      if (yc > maxAbsYc) {
-        maxAbsYc = yc
-        top1 = { name: name, prices: c.prices }
+      if (!isDataReliable(c.prices)) return
+      var m3 = Math.abs(algo.cC(c.prices, 3))
+      if (m3 > maxAbs3m) {
+        maxAbs3m = m3
+        var raw = algo.cC(c.prices, 3)
+        top1 = { name: name, prices: c.prices, m3: raw, tier: c.tier }
       }
     })
     this._top1City = top1
+
+    var top1Text = ''
+    if (top1) {
+      var dir = top1.m3 > 0 ? '上涨' : '下跌'
+      top1Text = '近3月异动最大城市：' + top1.name + '（' + top1.tier + '），' + dir + fmt.fc(top1.m3) + '，已在图中标注'
+    }
 
     this.setData({
       loaded: true,
@@ -63,7 +86,8 @@ Page({
       natJudge: natJudge,
       shJudge: shJudge,
       shVsNat: shVsNat,
-      top1Name: top1 ? top1.name : ''
+      top1Name: top1 ? top1.name : '',
+      top1Text: top1Text
     })
 
     this.buildTierCards(cities)
@@ -77,13 +101,16 @@ Page({
       var tier = c.tier
       if (!tierMap[tier]) tierMap[tier] = []
       var yc = algo.cC(c.prices, 12)
+      var m3 = algo.cC(c.prices, 3)
       var tp = algo.cTp(c.prices, c.volumes)
       tierMap[tier].push({
         name: name,
         price: c.prices[c.prices.length - 1],
         yc: yc,
+        m3: m3,
         tp: tp,
-        absYc: Math.abs(yc)
+        absM3: Math.abs(m3),
+        reliable: isDataReliable(c.prices)
       })
     })
 
@@ -95,8 +122,10 @@ Page({
       var avgPrice = Math.round(list.reduce(function(s, c) { return s + c.price }, 0) / count)
       var avgYc = list.reduce(function(s, c) { return s + c.yc }, 0) / count
 
-      list.sort(function(a, b) { return b.absYc - a.absYc })
-      var top1 = list[0]
+      var reliable = list.filter(function(c) { return c.reliable })
+      if (reliable.length === 0) reliable = list
+      reliable.sort(function(a, b) { return b.absM3 - a.absM3 })
+      var top1 = reliable[0]
 
       return {
         tier: tier,
@@ -105,8 +134,8 @@ Page({
         avgYcStr: fmt.fc(avgYc),
         avgYcCls: fmt.vcClass(avgYc),
         top1Name: top1.name,
-        top1YcStr: fmt.fc(top1.yc),
-        top1YcCls: fmt.vcClass(top1.yc),
+        top1M3Str: fmt.fc(top1.m3),
+        top1M3Cls: fmt.vcClass(top1.m3),
         top1TempL: top1.tp.l,
         top1TempC: top1.tp.c
       }

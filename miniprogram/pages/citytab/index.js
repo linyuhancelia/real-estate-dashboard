@@ -16,9 +16,9 @@ Page({
     allCityNames: [],
     favCities: [],
     provinces: [],
-    tiers: [],
+    provCities: [],
     fProv: '',
-    fTier: '',
+    fCity: '',
     cityName: '',
     tier: '',
     province: '',
@@ -57,9 +57,8 @@ Page({
       var g = app.globalData
       var names = Object.keys(g.cities).sort()
       var provinces = [''].concat(g.meta.provinces || [])
-      var tiers = [''].concat(g.meta.tiers || [])
       self._allNames = names
-      self.setData({ loaded: true, allCityNames: names, provinces: provinces, tiers: tiers })
+      self.setData({ loaded: true, allCityNames: names, provinces: provinces })
       self._selectCity(self.data.currentCity)
     })
   },
@@ -88,14 +87,22 @@ Page({
 
   onProvChange: function(e) {
     var prov = this.data.provinces[e.detail.value] || ''
-    this.setData({ fProv: prov })
-    this._updateSuggestions()
+    var g = app.globalData
+    var cities = g.cities
+    var provCities = ['']
+    if (prov) {
+      (this._allNames || []).forEach(function(n) {
+        if (cities[n] && cities[n].province === prov) provCities.push(n)
+      })
+    }
+    this.setData({ fProv: prov, fCity: '', provCities: provCities })
   },
 
-  onTierChange: function(e) {
-    var tier = this.data.tiers[e.detail.value] || ''
-    this.setData({ fTier: tier })
-    this._updateSuggestions()
+  onCityPick: function(e) {
+    var city = this.data.provCities[e.detail.value] || ''
+    if (!city) return
+    this.setData({ fCity: city })
+    this._selectCity(city)
   },
 
   onSearch: function(e) {
@@ -103,24 +110,32 @@ Page({
     this._updateSuggestions()
   },
 
+  onSearchConfirm: function() {
+    var keyword = this.data.searchText
+    if (!keyword) return
+    var g = app.globalData
+    var match = (this._allNames || []).filter(function(n) {
+      return n.indexOf(keyword) >= 0
+    })
+    if (match.length === 1) {
+      this._selectCity(match[0])
+    } else if (match.length > 1) {
+      this.setData({ suggestions: match.slice(0, 12) })
+    }
+  },
+
   _updateSuggestions: function() {
     var g = app.globalData
     var cities = g.cities
     var keyword = this.data.searchText
-    var fProv = this.data.fProv
-    var fTier = this.data.fTier
 
-    if (!keyword && !fProv && !fTier) {
+    if (!keyword) {
       this.setData({ suggestions: [] })
       return
     }
 
     var results = (this._allNames || []).filter(function(n) {
-      var c = cities[n]
-      if (fProv && c.province !== fProv) return false
-      if (fTier && c.tier !== fTier) return false
-      if (keyword && n.indexOf(keyword) < 0) return false
-      return true
+      return n.indexOf(keyword) >= 0
     }).slice(0, 12)
     this.setData({ suggestions: results })
   },
@@ -130,7 +145,7 @@ Page({
     var d = g.cities[name]
     if (!d) return
 
-    this.setData({ searchText: '', suggestions: '', currentCity: name, detailLoaded: false, fProv: '', fTier: '' })
+    this.setData({ searchText: '', suggestions: '', currentCity: name, detailLoaded: false })
 
     var lp = d.prices[d.prices.length - 1]
     var wc = algo.cC(d.prices, 1) / 4
@@ -239,10 +254,13 @@ Page({
       var mc = algo.cC(p, 1), m3 = algo.cC(p, 3), yc = algo.cC(p, 12)
       var tp = algo.cTp(p, vol)
       var sg = algo.dSg(p, vol)
+      var vp = algo.vpDx(p, vol)
+      var vpClsMap = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
       if (yc > 0) upCount++
-      targets.push({ name: n, type: '物业', s: sg.s, d: sg.d })
+      targets.push({ name: n, type: '物业', s: sg.s, d: sg.d, vpLabel: vp.label, vpCls: vpClsMap[vp.label] || 'ti' })
       ptList.push({
         name: n, desc: v.desc || '', priceStr: lp.toLocaleString(),
+        vpLabel: vp.label, vpCls: vpClsMap[vp.label] || 'ti',
         tempLabel: tp.l, tempScore: tp.s, tempCls: tp.c,
         rentYield: v.rentYield, monthsOfSupply: v.monthsOfSupply,
         premiumRate: (v.premiumRate * 100).toFixed(0), signals: sg.s,
@@ -278,7 +296,9 @@ Page({
       var lp = p[p.length - 1]
       var yc = algo.cC(p, 12), m3c = algo.cC(p, 3)
       var sg = algo.dSg(p, vol)
-      targets.push({ name: n, type: '板块', s: sg.s, d: sg.d })
+      var vp = algo.vpDx(p, vol)
+      var vpClsMap2 = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
+      targets.push({ name: n, type: '板块', s: sg.s, d: sg.d, vpLabel: vp.label, vpCls: vpClsMap2[vp.label] || 'ti' })
       list.push({
         name: n, sub: v.sub || v.district || '', district: v.district || '',
         price: lp, priceStr: lp.toLocaleString(),

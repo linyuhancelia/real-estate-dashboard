@@ -46,6 +46,14 @@
   background: #f5f5f5;
   min-width: 0;
 }
+.ct-search-btn {
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #2980b9;
+  color: #fff;
+  white-space: nowrap;
+}
 .ct-suggest {
   white-space: nowrap;
   margin-top: 8px;
@@ -110,7 +118,18 @@
 .sc-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
 .sc-detail { margin-left: auto; max-width: 60%; text-align: right; }
 .sig-fold { text-align: center; padding: 10px; }
+.sig-fold-btn {
+  display: inline-block;
+  font-size: 12px;
+  color: #2980b9;
+  padding: 6px 16px;
+  border: 1px solid #2980b9;
+  border-radius: 16px;
+  background: #f0f7ff;
+}
 .sig-inactive { opacity: 0.6; }
+.sig-method { padding: 10px 14px; }
+.sig-method text { display: block; line-height: 1.8; }
 
 /* Property Types */
 .pt-card { padding: 12px 14px; }

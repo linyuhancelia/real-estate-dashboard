@@ -123,8 +123,24 @@
   text-align: center;
   padding: 10px;
 }
+.sig-fold-btn {
+  display: inline-block;
+  font-size: 12px;
+  color: #2980b9;
+  padding: 6px 16px;
+  border: 1px solid #2980b9;
+  border-radius: 16px;
+  background: #f0f7ff;
+}
 .sig-inactive {
   opacity: 0.6;
+}
+.sig-method {
+  padding: 10px 14px;
+}
+.sig-method text {
+  display: block;
+  line-height: 1.8;
 }
 
 /* M4 Property Types */

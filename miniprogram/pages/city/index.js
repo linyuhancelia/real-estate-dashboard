@@ -104,15 +104,17 @@ Page({
   },
 
   buildSignals: function(name, d) {
+    var vpClsMap = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
     var targets = [{ name: name + '(整体)', type: '城市', p: d.prices, v: d.volumes }]
 
     var onC = 0, stC = 0, rcC = 0
     var signalTargets = targets.map(function(t) {
       var r = algo.dSg(t.p, t.v)
+      var vp = algo.vpDx(t.p, t.v)
       if (r.s.sd) onC++
       if (r.s.st) stC++
       if (r.s.rc) rcC++
-      return { name: t.name, type: t.type, s: r.s, d: r.d }
+      return { name: t.name, type: t.type, s: r.s, d: r.d, vpLabel: vp.label, vpCls: vpClsMap[vp.label] || 'ti' }
     })
 
     var tt = targets.length
@@ -219,15 +221,19 @@ Page({
       var yc = algo.cC(p, 12)
       var tp = algo.cTp(p, vol)
       var sg = algo.dSg(p, vol)
+      var vp = algo.vpDx(p, vol)
+      var vpClsMap = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
 
       if (yc > 0) upCount++
 
-      currentTargets.push({ name: n, type: '物业', s: sg.s, d: sg.d })
+      currentTargets.push({ name: n, type: '物业', s: sg.s, d: sg.d, vpLabel: vp.label, vpCls: vpClsMap[vp.label] || 'ti' })
 
       ptList.push({
         name: n,
         desc: v.desc || '',
         priceStr: lp.toLocaleString(),
+        vpLabel: vp.label,
+        vpCls: vpClsMap[vp.label] || 'ti',
         tempLabel: tp.l,
         tempScore: tp.s,
         tempCls: tp.c,
@@ -277,8 +283,10 @@ Page({
       var yc = algo.cC(p, 12)
       var m3c = algo.cC(p, 3)
       var sg = algo.dSg(p, vol)
+      var vp = algo.vpDx(p, vol)
+      var vpClsMap2 = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
 
-      currentTargets.push({ name: n, type: '板块', s: sg.s, d: sg.d })
+      currentTargets.push({ name: n, type: '板块', s: sg.s, d: sg.d, vpLabel: vp.label, vpCls: vpClsMap2[vp.label] || 'ti' })
 
       list.push({
         name: n,

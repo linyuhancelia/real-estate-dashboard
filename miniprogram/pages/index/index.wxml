@@ -10,6 +10,9 @@
       <text>\n上海：<text class="fw600">{{shJudge.verdict}}</text>，{{shVsNat}}</text>
     </view>
     <view class="ov-hint text-muted fs10">{{shJudge.hint}}</view>
+    <view class="ov-top1" wx:if="{{top1Text}}">
+      <text class="fs11" style="color:#2ecc71">▸ {{top1Text}}</text>
+    </view>
 
     <!-- 时间筛选 + 趋势图 -->
     <view class="period-bar">
@@ -25,7 +28,7 @@
   <!-- 类别聚合卡片 -->
   <view class="section-title">
     <text class="fw600 fs14">城市类别概览</text>
-    <text class="text-muted fs10">Top1异动 = 年变化最大</text>
+    <text class="text-muted fs10">Top1异动 = 近3月变化最大（已过滤数据异常）</text>
   </view>
 
   <view class="tier-list">
@@ -49,7 +52,7 @@
           <view class="tag tag-{{item.top1TempC}}">{{item.top1TempL}}</view>
           <view class="tc-top1-city">
             <text class="fw600 fs12">{{item.top1Name}}</text>
-            <text class="mono fw600 fs11 {{item.top1YcCls}}">{{item.top1YcStr}}</text>
+            <text class="mono fw600 fs11 {{item.top1M3Cls}}">{{item.top1M3Str}}</text>
             <text class="fs10" style="color:#2980b9"> ></text>
           </view>
         </view>
