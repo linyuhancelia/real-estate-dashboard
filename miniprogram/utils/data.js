@@ -1,4 +1,8 @@
-var BASE_URL = 'https://cdn.jsdelivr.net/gh/linyuhancelia/real-estate-dashboard@main/data'
+var BUNDLED = require('../data/bundled_summary')
+var CDN_URLS = [
+  'https://cdn.jsdelivr.net/gh/linyuhancelia/real-estate-dashboard@main/data',
+  'https://raw.githubusercontent.com/linyuhancelia/real-estate-dashboard/main/data'
+]
 var CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 
 var _cityFiles = null
@@ -9,6 +13,7 @@ function request(url) {
       url: url,
       method: 'GET',
       dataType: 'json',
+      timeout: 8000,
       success: function(res) {
         if (res.statusCode === 200) {
           resolve(res.data)
@@ -21,6 +26,16 @@ function request(url) {
       }
     })
   })
+}
+
+function requestWithFallback(path) {
+  var i = 0
+  function tryNext() {
+    if (i >= CDN_URLS.length) return Promise.reject(new Error('all CDNs failed'))
+    var url = CDN_URLS[i++] + path
+    return request(url).catch(function() { return tryNext() })
+  }
+  return tryNext()
 }
 
 function getCached(key) {
@@ -47,11 +62,15 @@ function loadSummary() {
     _cityFiles = cached.meta.city_files || {}
     return Promise.resolve(cached)
   }
-  return request(BASE_URL + '/summary.json').then(function(data) {
+
+  _cityFiles = BUNDLED.meta.city_files || {}
+
+  requestWithFallback('/summary.json').then(function(data) {
     _cityFiles = data.meta.city_files || {}
     setCache('summary', data)
-    return data
-  })
+  }).catch(function() {})
+
+  return Promise.resolve(BUNDLED)
 }
 
 function getCityCode(name) {
@@ -65,7 +84,7 @@ function loadCityDetail(name) {
   if (cached) return Promise.resolve(cached)
 
   var code = getCityCode(name)
-  return request(BASE_URL + '/city/' + code + '.json').then(function(data) {
+  return requestWithFallback('/city/' + code + '.json').then(function(data) {
     setCache(cacheKey, data)
     return data
   })
@@ -87,5 +106,5 @@ module.exports = {
   loadCityDetail: loadCityDetail,
   getCityCode: getCityCode,
   clearCache: clearCache,
-  BASE_URL: BASE_URL
+  BASE_URL: CDN_URLS[0]
 }
