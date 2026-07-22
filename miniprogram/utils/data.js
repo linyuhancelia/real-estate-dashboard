@@ -1,4 +1,4 @@
-var BASE_URL = 'https://raw.githubusercontent.com/linyuhancelia/real-estate-dashboard/main/data'
+var BASE_URL = 'https://cdn.jsdelivr.net/gh/linyuhancelia/real-estate-dashboard@main/data'
 var CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 
 var _cityFiles = null
