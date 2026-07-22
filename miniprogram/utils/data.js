@@ -1,4 +1,4 @@
-var BASE_URL = 'https://linyuhancelia.github.io/real-estate-dashboard/data'
+var BASE_URL = 'https://raw.githubusercontent.com/linyuhancelia/real-estate-dashboard/main/data'
 var CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 
 var _cityFiles = null
