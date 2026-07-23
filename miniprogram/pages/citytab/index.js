@@ -160,6 +160,7 @@ Page({
     var rs = algo.cRS(d.prices, g.allPrices, g.national.prices)
     var sg = algo.dSg(d.prices, d.volumes)
     var judge = algo.mktJudge(d.prices, d.volumes)
+    var jumps = algo.detectJumps(d.prices, g.meta)
     var vp = algo.vpDx(d.prices, d.volumes)
     var vpClsMap = { '量价齐升': 'tp', '价升量缩': 'tw', '量升价跌': 'tn', '量价齐跌': 'tng', '缩量盘整': 'ti' }
 
@@ -187,6 +188,7 @@ Page({
         { label: '近1年', val: fmt.fc(yc), cls: fmt.vcClass(yc) }
       ],
       judge: judge,
+      dataJumps: jumps,
       vpDiag: { label: vp.label, cls: vpClsMap[vp.label] || 'ti' }
     })
 

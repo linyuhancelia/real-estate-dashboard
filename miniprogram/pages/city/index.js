@@ -71,6 +71,7 @@ Page({
     var rs = algo.cRS(d.prices, g.allPrices, g.national.prices)
     var sg = algo.dSg(d.prices, d.volumes)
     var judge = algo.mktJudge(d.prices, d.volumes)
+    var jumps = algo.detectJumps(d.prices, g.meta)
 
     this.setData({
       loaded: true,
@@ -92,7 +93,8 @@ Page({
         { label: '近3月', val: fmt.fc(m3), cls: fmt.vcClass(m3) },
         { label: '近1年', val: fmt.fc(yc), cls: fmt.vcClass(yc) }
       ],
-      judge: judge
+      judge: judge,
+      dataJumps: jumps
     })
 
     var vp = algo.vpDx(d.prices, d.volumes)

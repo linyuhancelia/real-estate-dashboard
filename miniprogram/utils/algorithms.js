@@ -50,6 +50,26 @@ function isReliable(prices, window) {
   return same < Math.floor(w / 2)
 }
 
+function detectJumps(prices, meta) {
+  if (!prices || prices.length < 3) return []
+  var months = (meta && meta.months) || []
+  var jumps = []
+  for (var i = 1; i < prices.length; i++) {
+    var chg = (prices[i] - prices[i - 1]) / prices[i - 1]
+    if (Math.abs(chg) > 0.15) {
+      var label = months[i] || ('第' + (i + 1) + '月')
+      jumps.push({
+        idx: i,
+        month: label,
+        from: prices[i - 1],
+        to: prices[i],
+        pct: (chg * 100).toFixed(1)
+      })
+    }
+  }
+  return jumps
+}
+
 function cRS(p, all, natPrices) {
   var pds = [{ m: 1, w: 0.4 }, { m: 3, w: 0.35 }, { m: 12, w: 0.25 }]
   var wp = 0
@@ -174,5 +194,6 @@ module.exports = {
   vpDx: vpDx,
   mktJudge: mktJudge,
   getTop1: getTop1,
-  isReliable: isReliable
+  isReliable: isReliable,
+  detectJumps: detectJumps
 }

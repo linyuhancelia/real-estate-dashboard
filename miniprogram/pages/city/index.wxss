@@ -308,3 +308,29 @@
   flex: 1;
   text-align: center;
 }
+
+.data-warn {
+  padding: 10px 14px;
+  background: #fffbe6;
+  border-left: 3px solid #faad14;
+}
+.data-warn-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.data-warn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #faad14;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.data-warn-desc { margin-bottom: 4px; }
+.data-warn-item { color: #8c6e00; padding: 1px 0; }

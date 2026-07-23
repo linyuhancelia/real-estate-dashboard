@@ -83,6 +83,18 @@
       </view>
     </view>
 
+    <!-- 数据质量提示 -->
+    <view class="card data-warn" wx:if="{{dataJumps.length}}">
+      <view class="data-warn-title">
+        <text class="data-warn-icon">!</text>
+        <text class="fw600 fs12">数据源变动提示</text>
+      </view>
+      <view class="data-warn-desc text-muted fs11">以下月份因数据源切换导致价格跳变，涨跌幅仅供参考：</view>
+      <view class="data-warn-item fs11" wx:for="{{dataJumps}}" wx:key="idx">
+        <text>{{item.month}}：{{item.from}}→{{item.to}}元/㎡（{{item.pct}}%）</text>
+      </view>
+    </view>
+
     <!-- 结论卡 -->
     <view class="card insight-box">
       <view class="tag tag-{{judge.cls}}">{{judge.verdict}}</view>
