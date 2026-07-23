@@ -4,21 +4,6 @@ var app = getApp()
 
 var PERIOD_MAP = { '6月': 7, '1年': 13, '2年': 25 }
 
-function isDataReliable(prices) {
-  if (!prices || prices.length < 6) return false
-  var recent = prices.slice(-6)
-  var same = 0
-  for (var i = 1; i < recent.length; i++) {
-    if (recent[i] === recent[i - 1]) same++
-  }
-  if (same >= 3) return false
-  for (var j = 1; j < recent.length; j++) {
-    var chg = Math.abs((recent[j] - recent[j - 1]) / recent[j - 1])
-    if (chg > 0.15) return false
-  }
-  return true
-}
-
 Page({
   data: {
     loaded: false,
@@ -64,7 +49,7 @@ Page({
     Object.keys(cities).forEach(function(name) {
       if (name === '上海') return
       var c = cities[name]
-      if (!isDataReliable(c.prices)) return
+      if (!algo.isReliable(c.prices)) return
       var m3 = Math.abs(algo.cC(c.prices, 3))
       if (m3 > maxAbs3m) {
         maxAbs3m = m3
@@ -110,7 +95,7 @@ Page({
         m3: m3,
         tp: tp,
         absM3: Math.abs(m3),
-        reliable: isDataReliable(c.prices)
+        reliable: algo.isReliable(c.prices)
       })
     })
 

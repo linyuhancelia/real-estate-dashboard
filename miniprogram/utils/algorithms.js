@@ -37,6 +37,19 @@ function cTp(p, v) {
   return { s: Math.round(s), l: '寒', c: 'tc' }
 }
 
+function isReliable(prices, window) {
+  var w = window || 13
+  if (!prices || prices.length < w) return false
+  var seg = prices.slice(-w)
+  var same = 0
+  for (var i = 1; i < seg.length; i++) {
+    if (seg[i] === seg[i - 1]) same++
+    var chg = Math.abs((seg[i] - seg[i - 1]) / seg[i - 1])
+    if (chg > 0.15) return false
+  }
+  return same < Math.floor(w / 2)
+}
+
 function cRS(p, all, natPrices) {
   var pds = [{ m: 1, w: 0.4 }, { m: 3, w: 0.35 }, { m: 12, w: 0.25 }]
   var wp = 0
@@ -160,5 +173,6 @@ module.exports = {
   dSg: dSg,
   vpDx: vpDx,
   mktJudge: mktJudge,
-  getTop1: getTop1
+  getTop1: getTop1,
+  isReliable: isReliable
 }

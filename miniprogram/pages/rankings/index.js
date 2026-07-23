@@ -60,7 +60,9 @@ Page({
     var favSet = {}
     this.data.favCities.forEach(function(n) { favSet[n] = true })
 
-    var items = Object.keys(cities).map(function(name) {
+    var items = Object.keys(cities).filter(function(name) {
+      return algo.isReliable(cities[name].prices)
+    }).map(function(name) {
       var c = cities[name]
       var rs = algo.cRS(c.prices, allPrices, natPrices)
       var yc = algo.cC(c.prices, 12)
