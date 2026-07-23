@@ -46,6 +46,11 @@ function isReliable(prices, window) {
     if (seg[i] === seg[i - 1]) same++
     var chg = Math.abs((seg[i] - seg[i - 1]) / seg[i - 1])
     if (chg > 0.15) return false
+    if (i < seg.length - 1) {
+      var chg2 = (seg[i + 1] - seg[i]) / seg[i]
+      var chg1 = (seg[i] - seg[i - 1]) / seg[i - 1]
+      if (chg1 * chg2 < 0 && Math.abs(chg1) > 0.05 && Math.abs(chg2) > 0.05) return false
+    }
   }
   return same < Math.floor(w / 2)
 }
@@ -56,7 +61,12 @@ function detectJumps(prices, meta) {
   var jumps = []
   for (var i = 1; i < prices.length; i++) {
     var chg = (prices[i] - prices[i - 1]) / prices[i - 1]
-    if (Math.abs(chg) > 0.15) {
+    var isPulse = false
+    if (i < prices.length - 1) {
+      var chg2 = (prices[i + 1] - prices[i]) / prices[i]
+      if (chg * chg2 < 0 && Math.abs(chg) > 0.05 && Math.abs(chg2) > 0.05) isPulse = true
+    }
+    if (Math.abs(chg) > 0.15 || isPulse) {
       var label = months[i] || ('第' + (i + 1) + '月')
       jumps.push({
         idx: i,
