@@ -60,6 +60,7 @@ Page({
     var favSet = {}
     this.data.favCities.forEach(function(n) { favSet[n] = true })
 
+    var totalCities = Object.keys(cities).length
     var items = Object.keys(cities).filter(function(name) {
       return algo.isReliable(cities[name].prices)
     }).map(function(name) {
@@ -115,11 +116,14 @@ Page({
       it.valColor = it.monthsOfSupply <= 12 ? '#2d8c4e' : it.monthsOfSupply <= 18 ? '#e67e22' : '#c0392b'
     })
 
+    var excludedCount = totalCities - items.length
+
     this.setData({
       loaded: true,
       rsList: rsList,
       ryList: ryList,
-      mssList: mssList
+      mssList: mssList,
+      rankNote: excludedCount > 0 ? '已排除' + excludedCount + '个数据源异常城市' : ''
     })
   },
 

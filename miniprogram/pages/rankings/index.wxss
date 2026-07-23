@@ -1,4 +1,5 @@
 /* Rankings Tab Bar */
+.rank-note { text-align: center; padding: 0 12px 4px; color: #999; }
 .rk-tabs {
   display: flex;
   gap: 8px;
