@@ -769,34 +769,138 @@ def interpolate_monthly(sparse_data: Dict[str, int], num_months: int = 25) -> Tu
     return result_prices, result_labels
 
 
+def _source_mom_rates(prices: Dict[str, int]) -> Dict[str, float]:
+    """将绝对价格序列转为环比变化率序列 (MoM ratio)"""
+    if not prices:
+        return {}
+    keys = sorted(prices.keys())
+    rates = {}
+    for i in range(1, len(keys)):
+        prev_key = keys[i - 1]
+        cur_key = keys[i]
+        if _prev_month_key(cur_key) == prev_key and prices[prev_key] > 0:
+            rates[cur_key] = prices[cur_key] / prices[prev_key]
+    return rates
+
+
+def _weighted_median(values_weights):
+    """加权中位数，用于抗异常值的共识计算"""
+    if not values_weights:
+        return 1.0
+    if len(values_weights) == 1:
+        return values_weights[0][0]
+    sorted_vw = sorted(values_weights, key=lambda x: x[0])
+    total_w = sum(w for _, w in sorted_vw)
+    cumulative = 0.0
+    for val, w in sorted_vw:
+        cumulative += w
+        if cumulative >= total_w / 2:
+            return val
+    return sorted_vw[-1][0]
+
+
 def merge_monthly_prices(anjuke_sparse: Dict[str, int],
                          creprice_monthly: Dict[str, int],
                          fang_monthly: Dict[str, int] = None,
                          num_months: int = 25) -> Tuple[List[int], List[str]]:
-    """以安居客为基准价格，用creprice和fang.com环比变化率补全缺失月份"""
+    """链式指数法三源融合 (Chain-Linked Index Method)
+
+    核心思路: 不混合不同源的绝对价格, 而是:
+    1. 各源 → 环比变化率(MoM ratio)序列
+    2. 每月取可用源的加权中位数作为共识环比
+    3. 从锚点链式推算, 保证价格序列内在一致, 无水平跳变
+    """
     if not creprice_monthly and not fang_monthly:
         return interpolate_monthly(anjuke_sparse, num_months)
 
-    merged = dict(anjuke_sparse)
+    sources = [
+        (anjuke_sparse, 0.45),
+        (creprice_monthly, 0.35),
+    ]
+    if fang_monthly:
+        sources.append((fang_monthly, 0.20))
+    else:
+        sources[0] = (anjuke_sparse, 0.55)
+        sources[1] = (creprice_monthly, 0.45)
 
-    supplements = [s for s in [creprice_monthly, fang_monthly] if s]
+    all_rates = []
+    for src, weight in sources:
+        if src:
+            all_rates.append((_source_mom_rates(src), weight))
+
     all_keys = sorted(set(
-        list(anjuke_sparse.keys()) +
-        [k for s in supplements for k in s]
+        k for src, _ in sources if src for k in src
     ))
+    if not all_keys:
+        return interpolate_monthly(anjuke_sparse, num_months)
 
-    for supplement in supplements:
-        for key in all_keys:
-            if key in merged:
-                continue
-            if key not in supplement:
-                continue
-            prev = _prev_month_key(key)
-            if prev in merged and prev in supplement and supplement[prev] > 0:
-                mom = supplement[key] / supplement[prev]
-                merged[key] = round(merged[prev] * mom)
+    consensus_rates = {}
+    for key in all_keys:
+        available = [(rates.get(key), w) for rates, w in all_rates if key in rates]
+        if not available:
+            continue
+        vals = [(v, w) for v, w in available if v is not None]
+        if vals:
+            if len(vals) >= 2:
+                median = _weighted_median(vals)
+                outlier_filtered = [
+                    (v, w) for v, w in vals
+                    if abs(v - median) < 0.08
+                ]
+                if outlier_filtered:
+                    vals = outlier_filtered
+            total_w = sum(w for _, w in vals)
+            consensus_rates[key] = sum(v * w for v, w in vals) / total_w
 
-    return interpolate_monthly(merged, num_months)
+    anchor_key = None
+    anchor_price = 0
+    for key in reversed(sorted(anjuke_sparse.keys())):
+        if anjuke_sparse[key] > 0:
+            anchor_key = key
+            anchor_price = anjuke_sparse[key]
+            break
+
+    if not anchor_key:
+        best_src = creprice_monthly or fang_monthly or {}
+        for key in reversed(sorted(best_src.keys())):
+            if best_src[key] > 0:
+                anchor_key = key
+                anchor_price = best_src[key]
+                break
+
+    if not anchor_key:
+        return interpolate_monthly(anjuke_sparse, num_months)
+
+    chained = {anchor_key: anchor_price}
+
+    sorted_keys = sorted(all_keys)
+    anchor_idx = sorted_keys.index(anchor_key) if anchor_key in sorted_keys else -1
+
+    if anchor_idx >= 0:
+        for i in range(anchor_idx + 1, len(sorted_keys)):
+            key = sorted_keys[i]
+            prev_key = sorted_keys[i - 1]
+            if prev_key in chained:
+                rate = consensus_rates.get(key, 1.0)
+                rate = max(0.85, min(1.15, rate))
+                chained[key] = round(chained[prev_key] * rate)
+
+        for i in range(anchor_idx - 1, -1, -1):
+            key = sorted_keys[i]
+            next_key = sorted_keys[i + 1]
+            if next_key in chained:
+                rate = consensus_rates.get(next_key, 1.0)
+                if rate > 0:
+                    rate = max(0.85, min(1.15, rate))
+                    chained[key] = round(chained[next_key] / rate)
+
+    for key, price in anjuke_sparse.items():
+        if price > 0 and key in chained:
+            drift = abs(chained[key] - price) / price
+            if drift < 0.05:
+                chained[key] = price
+
+    return interpolate_monthly(chained, num_months)
 
 
 # ===== 估算模型 =====
@@ -1295,7 +1399,7 @@ def main():
             fail_count += 1
             continue
 
-        # === Step 4: 三源融合 ===
+        # === Step 4: 链式指数法三源融合 ===
         sources = []
         if raw_prices:
             sources.append(f"安居客{len(raw_prices)}")
@@ -1304,6 +1408,7 @@ def main():
         if fang_city_prices:
             sources.append(f"房天下{len(fang_city_prices)}")
 
+        n_sources = len(sources)
         if raw_prices:
             interp_prices, _ = merge_monthly_prices(
                 raw_prices, cp_city_prices, fang_city_prices, NUM_MONTHS)
@@ -1313,6 +1418,8 @@ def main():
         else:
             interp_prices, _ = interpolate_monthly(fang_city_prices, NUM_MONTHS)
         src = "+".join(sources)
+        if n_sources >= 2:
+            src += " [链式融合]"
         if not interp_prices or all(p == 0 for p in interp_prices):
             print(f"  ✗ 插值失败")
             fail_count += 1
