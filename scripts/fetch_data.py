@@ -437,6 +437,8 @@ class CrepriceCrawler:
         self.session.headers.update(CREPRICE_HEADERS)
         self._district_cache = {}
         self._town_cache = {}
+        self._dead = False
+        self._total_failures = 0
         try:
             self.session.get(f'{CREPRICE_BASE}/', timeout=10)
         except Exception:
@@ -447,11 +449,13 @@ class CrepriceCrawler:
 
     def _warmup(self, city_code):
         try:
-            self.session.get(f'{CREPRICE_BASE}/city/{city_code}.html', timeout=10)
+            self.session.get(f'{CREPRICE_BASE}/city/{city_code}.html', timeout=5)
         except Exception:
             pass
 
     def _api_get(self, city_code, district=None, town=None, retry=True):
+        if self._dead:
+            return {}
         params = {
             'city': city_code, 'proptype': '11', 'flag': '1',
             'type': 'forsale', 'based': 'price', 'dtype': 'line',
@@ -464,19 +468,12 @@ class CrepriceCrawler:
         self.session.headers['Referer'] = f'{CREPRICE_BASE}/city/{city_code}.html'
         try:
             r = self.session.get(f'{CREPRICE_BASE}/market/chartsdatanew.html',
-                                params=params, timeout=15)
+                                params=params, timeout=5)
             if r.status_code != 200:
-                if retry:
-                    time.sleep(1)
-                    self._warmup(city_code)
-                    return self._api_get(city_code, district, town, retry=False)
+                self._record_failure()
                 return {}
             data = r.json()
             if data.get('code') != 200 or not data.get('data'):
-                if retry:
-                    time.sleep(1)
-                    self._warmup(city_code)
-                    return self._api_get(city_code, district, town, retry=False)
                 return {}
             if data.get('isAllow') == 0:
                 return {}
@@ -492,11 +489,14 @@ class CrepriceCrawler:
                         prices[f"{parts[0]}/{int(parts[1]):02d}"] = int(price)
             return prices
         except Exception as e:
-            if retry:
-                time.sleep(1)
-                return self._api_get(city_code, district, town, retry=False)
-            print(f"[WARN] creprice API {city_code}: {e}")
+            self._record_failure()
             return {}
+
+    def _record_failure(self):
+        self._total_failures += 1
+        if self._total_failures >= 5 and not self._dead:
+            self._dead = True
+            print(f"[WARN] creprice.cn: {self._total_failures} failures, skipping remaining requests")
 
     def fetch_city_prices(self, city_code: str) -> Dict[str, int]:
         return self._api_get(city_code)
@@ -508,11 +508,13 @@ class CrepriceCrawler:
         return self._api_get(city_code, district=district_code, town=town_code)
 
     def discover_districts(self, city_code: str) -> Dict[str, str]:
+        if self._dead:
+            return {}
         if city_code in self._district_cache:
             return self._district_cache[city_code]
         try:
             self.session.headers['Referer'] = f'{CREPRICE_BASE}/city/{city_code}.html'
-            r = self.session.get(f'{CREPRICE_BASE}/urban/{city_code}.html', timeout=15)
+            r = self.session.get(f'{CREPRICE_BASE}/urban/{city_code}.html', timeout=5)
             if r.status_code != 200:
                 return {}
             soup = BeautifulSoup(r.text, 'html.parser')
@@ -528,17 +530,20 @@ class CrepriceCrawler:
             self._district_cache[city_code] = districts
             return districts
         except Exception as e:
+            self._record_failure()
             print(f"[WARN] discover districts {city_code}: {e}")
             return {}
 
     def discover_towns(self, city_code: str, district_code: str) -> Dict[str, str]:
+        if self._dead:
+            return {}
         cache_key = (city_code, district_code)
         if cache_key in self._town_cache:
             return self._town_cache[cache_key]
         try:
             self.session.headers['Referer'] = f'{CREPRICE_BASE}/urban/{city_code}.html'
             r = self.session.get(
-                f'{CREPRICE_BASE}/district/{district_code}.html?city={city_code}', timeout=15)
+                f'{CREPRICE_BASE}/district/{district_code}.html?city={city_code}', timeout=5)
             soup = BeautifulSoup(r.text, 'html.parser')
             towns = {}
             for a in soup.find_all('a', href=True):
@@ -551,6 +556,7 @@ class CrepriceCrawler:
             self._town_cache[cache_key] = towns
             return towns
         except Exception:
+            self._record_failure()
             return {}
 
 
@@ -1424,6 +1430,19 @@ def main():
             print(f"  ✗ 插值失败")
             fail_count += 1
             continue
+
+        # === Step 4b: 保存原始数据存档 ===
+        raw_sources_dir = DATA_DIR / "raw_sources"
+        raw_sources_dir.mkdir(exist_ok=True)
+        raw_record = {
+            "anjuke": raw_prices,
+            "creprice": cp_city_prices,
+            "fang": fang_city_prices,
+            "crawl_date": now.strftime("%Y-%m-%d"),
+        }
+        raw_code = FANG_CITY_CODES.get(city_name, city_name.lower().replace(' ', ''))
+        with open(raw_sources_dir / f"{raw_code}.json", "w") as f:
+            json.dump(raw_record, f, ensure_ascii=False, separators=(',', ':'))
 
         # === Step 5: 区域数据 ===
         anjuke_districts = anjuke.fetch_district_prices(city_name, 2026)
