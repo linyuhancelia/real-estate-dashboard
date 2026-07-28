@@ -197,7 +197,7 @@ def main():
     print(f'\n[PATCH] 补爬完成: {patched}成功, {failed}失败')
     print('[PATCH] 运行平滑安全网...')
 
-    from smooth_prices import smooth
+    from smooth_prices import smooth, smooth_national_prices
     months = summary['meta']['months']
     smooth_count = 0
     for name, city in summary['cities'].items():
@@ -225,6 +225,15 @@ def main():
         with open(summary_path, 'w') as f:
             json.dump(summary, f, ensure_ascii=False, separators=(',', ':'))
         print(f'[SMOOTH] 额外平滑 {smooth_count} 个数据点')
+
+    # 全国均价源切换平滑
+    nat_prices = summary['national']['prices']
+    nat_smoothed, nat_fixed = smooth_national_prices(nat_prices, months)
+    if nat_fixed:
+        summary['national']['prices'] = nat_smoothed
+        with open(summary_path, 'w') as f:
+            json.dump(summary, f, ensure_ascii=False, separators=(',', ':'))
+        print(f'[SMOOTH] 全国均价源切换平滑: {nat_fixed}个月份修正')
 
     # 更新 bundled_summary.js
     bundled_path = os.path.join(PROJECT_DIR, 'miniprogram', 'data', 'bundled_summary.js')

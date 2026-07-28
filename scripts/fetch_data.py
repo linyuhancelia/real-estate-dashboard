@@ -809,54 +809,46 @@ def merge_monthly_prices(anjuke_sparse: Dict[str, int],
                          creprice_monthly: Dict[str, int],
                          fang_monthly: Dict[str, int] = None,
                          num_months: int = 25) -> Tuple[List[int], List[str]]:
-    """链式指数法三源融合 (Chain-Linked Index Method)
+    """链式指数法三源融合 (Chain-Linked Index)
 
-    核心思路: 不混合不同源的绝对价格, 而是:
-    1. 各源 → 环比变化率(MoM ratio)序列
-    2. 每月取可用源的加权中位数作为共识环比
-    3. 从锚点链式推算, 保证价格序列内在一致, 无水平跳变
+    各源 → 环比率 → 加权中位数共识率 → 锚定链式还原.
+    单城市级别共识法效果最好(多源平均消噪).
+    全国级别的源切换跳变由 smooth_national_prices() 处理.
     """
     if not creprice_monthly and not fang_monthly:
         return interpolate_monthly(anjuke_sparse, num_months)
 
-    sources = [
-        (anjuke_sparse, 0.45),
-        (creprice_monthly, 0.35),
+    src_list = [
+        (anjuke_sparse, 'anjuke', 0.45),
+        (creprice_monthly, 'creprice', 0.35),
     ]
     if fang_monthly:
-        sources.append((fang_monthly, 0.20))
+        src_list.append((fang_monthly, 'fang', 0.20))
     else:
-        sources[0] = (anjuke_sparse, 0.55)
-        sources[1] = (creprice_monthly, 0.45)
+        src_list = [
+            (anjuke_sparse, 'anjuke', 0.55),
+            (creprice_monthly, 'creprice', 0.45),
+        ]
 
-    all_rates = []
-    for src, weight in sources:
+    src_rates = {}
+    for src, name, _ in src_list:
         if src:
-            all_rates.append((_source_mom_rates(src), weight))
+            src_rates[name] = _source_mom_rates(src)
 
     all_keys = sorted(set(
-        k for src, _ in sources if src for k in src
+        k for src, _, _ in src_list if src for k in src
     ))
     if not all_keys:
         return interpolate_monthly(anjuke_sparse, num_months)
 
     consensus_rates = {}
     for key in all_keys:
-        available = [(rates.get(key), w) for rates, w in all_rates if key in rates]
-        if not available:
-            continue
-        vals = [(v, w) for v, w in available if v is not None]
-        if vals:
-            if len(vals) >= 2:
-                median = _weighted_median(vals)
-                outlier_filtered = [
-                    (v, w) for v, w in vals
-                    if abs(v - median) < 0.08
-                ]
-                if outlier_filtered:
-                    vals = outlier_filtered
-            total_w = sum(w for _, w in vals)
-            consensus_rates[key] = sum(v * w for v, w in vals) / total_w
+        pairs = []
+        for src, name, weight in src_list:
+            if name in src_rates and key in src_rates[name]:
+                pairs.append((src_rates[name][key], weight))
+        if pairs:
+            consensus_rates[key] = _weighted_median(pairs)
 
     anchor_key = None
     anchor_price = 0
@@ -878,7 +870,6 @@ def merge_monthly_prices(anjuke_sparse: Dict[str, int],
         return interpolate_monthly(anjuke_sparse, num_months)
 
     chained = {anchor_key: anchor_price}
-
     sorted_keys = sorted(all_keys)
     anchor_idx = sorted_keys.index(anchor_key) if anchor_key in sorted_keys else -1
 
@@ -903,7 +894,7 @@ def merge_monthly_prices(anjuke_sparse: Dict[str, int],
     for key, price in anjuke_sparse.items():
         if price > 0 and key in chained:
             drift = abs(chained[key] - price) / price
-            if drift < 0.05:
+            if drift < 0.03:
                 chained[key] = price
 
     return interpolate_monthly(chained, num_months)

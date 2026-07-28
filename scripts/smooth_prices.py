@@ -23,6 +23,62 @@ LEVEL_SHIFT_THRESHOLD = 0.12
 MAD_MULTIPLIER = 4.5
 MAX_ROUNDS = 5
 
+NATIONAL_SWITCH_WINDOW = 3
+
+
+def smooth_national_prices(prices, months):
+    """全国均价专用平滑: 源切换月份的环比率替换为周边趋势
+
+    单城市级别的源切换跳变方向不一(有的高有的低), 共识法已消噪.
+    但全国均价是所有城市的算术平均, 系统性偏差会累积成可见跳变.
+    此函数在全国均价层面检测并消除这种系统性偏移.
+
+    方法: 将切换月份的环比率替换为前后窗口的趋势均值, 然后从该点
+    重新链式计算后续价格(保留原始环比率, 只修正基准).
+    """
+    if not prices or len(prices) < 5:
+        return prices, 0
+
+    result = list(prices)
+    fixed = 0
+    w = NATIONAL_SWITCH_WINDOW
+
+    raw_rates = []
+    for i in range(1, len(result)):
+        if result[i - 1] > 0:
+            raw_rates.append(result[i] / result[i - 1])
+        else:
+            raw_rates.append(1.0)
+
+    for idx, m in enumerate(months):
+        if m not in KNOWN_SWITCH_MONTHS:
+            continue
+        if idx < w or idx >= len(result) - w:
+            continue
+
+        rate_idx = idx - 1
+        before_rates = raw_rates[max(0, rate_idx - w):rate_idx]
+        after_rates = raw_rates[rate_idx + 1:rate_idx + 1 + w]
+
+        if not before_rates or not after_rates:
+            continue
+
+        trend_rate = (sum(before_rates) + sum(after_rates)) / (len(before_rates) + len(after_rates))
+        actual_rate = raw_rates[rate_idx]
+        deviation = actual_rate - trend_rate
+
+        if abs(deviation) < 0.002:
+            continue
+
+        result[idx] = round(result[idx - 1] * trend_rate)
+        fixed += 1
+
+        for j in range(idx + 1, len(result)):
+            if j - 1 < len(raw_rates):
+                result[j] = round(result[j - 1] * raw_rates[j - 1])
+
+    return result, fixed
+
 
 def compute_mom_rates(prices):
     """计算环比变化率序列"""
@@ -144,7 +200,9 @@ def main():
     for m in range(n_months):
         vals = [p[m] for p in all_prices if m < len(p)]
         nat_prices.append(round(sum(vals) / len(vals)))
-    summary['national']['prices'] = nat_prices
+
+    nat_smoothed, nat_fixed = smooth_national_prices(nat_prices, months)
+    summary['national']['prices'] = nat_smoothed
 
     with open(summary_path, 'w') as f:
         json.dump(summary, f, ensure_ascii=False, separators=(',', ':'))
@@ -178,6 +236,8 @@ def main():
                 print(f'    ... 还有{len(diffs)-8}个修正点')
 
     print(f'\n[SMOOTH] 文件已更新: summary.json + {len(city_files)}个城市文件')
+    if nat_fixed:
+        print(f'[SMOOTH] 全国均价源切换平滑: {nat_fixed}个月份修正')
 
 
 if __name__ == '__main__':
