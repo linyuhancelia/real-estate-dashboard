@@ -812,9 +812,23 @@ def merge_monthly_prices(anjuke_sparse: Dict[str, int],
     """链式指数法三源融合 (Chain-Linked Index)
 
     各源 → 环比率 → 加权中位数共识率 → 锚定链式还原.
-    单城市级别共识法效果最好(多源平均消噪).
-    全国级别的源切换跳变由 smooth_national_prices() 处理.
+    含源质量过滤: 环比标准差 >5% 的源自动排除(噪声太大).
     """
+    if not creprice_monthly and not fang_monthly:
+        return interpolate_monthly(anjuke_sparse, num_months)
+
+    import statistics as _stats
+    for name, src in [('creprice', creprice_monthly), ('fang', fang_monthly)]:
+        if src:
+            rates = _source_mom_rates(src)
+            if len(rates) >= 3:
+                vals = [(v - 1) for v in rates.values()]
+                if _stats.stdev(vals) > 0.05:
+                    if name == 'creprice':
+                        creprice_monthly = {}
+                    else:
+                        fang_monthly = None
+
     if not creprice_monthly and not fang_monthly:
         return interpolate_monthly(anjuke_sparse, num_months)
 
@@ -1658,6 +1672,21 @@ def main():
 
     output_two_layers(cities_data, output["meta"], output["national"],
                       str(DATA_DIR), FANG_CITY_CODES)
+
+    # 全量数据清洗: 异常检测 + 城市平滑 + 全国过渡平滑
+    from smooth_prices import full_clean
+    summary_path = DATA_DIR / "summary.json"
+    with open(summary_path) as f:
+        summary = json.load(f)
+    clean_results, clean_points, nat_fixed = full_clean(summary)
+    with open(summary_path, 'w') as f:
+        json.dump(summary, f, ensure_ascii=False, separators=(',', ':'))
+    bundled_path = DATA_DIR.parent / "miniprogram" / "data" / "bundled_summary.js"
+    if bundled_path.parent.exists():
+        js = 'module.exports = ' + json.dumps(summary, ensure_ascii=False, separators=(',', ':'))
+        with open(bundled_path, 'w') as f:
+            f.write(js)
+    print(f"[CLEAN] {len(clean_results)}个城市 {clean_points}个点修正, 全国{nat_fixed}月份过渡平滑")
 
     for check_city in ["上海", "北京", "深圳", "广州", "杭州", "南京", "苏州"]:
         if check_city in cities_data:
