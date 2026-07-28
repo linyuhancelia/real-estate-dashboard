@@ -24,17 +24,17 @@ MAD_MULTIPLIER = 4.5
 MAX_ROUNDS = 5
 
 NATIONAL_SWITCH_WINDOW = 3
+NATIONAL_TRANSITION_MONTHS = 4
 
 
 def smooth_national_prices(prices, months):
-    """全国均价专用平滑: 源切换月份的环比率替换为周边趋势
+    """全国均价专用平滑: 源切换过渡期斜率渐变
 
-    单城市级别的源切换跳变方向不一(有的高有的低), 共识法已消噪.
-    但全国均价是所有城市的算术平均, 系统性偏差会累积成可见跳变.
-    此函数在全国均价层面检测并消除这种系统性偏移.
+    问题: 安居客每年只有8-12月, 1月消失时全国均价下跌斜率突然变缓,
+    8月加入时突然变陡. 单月修正不够, 因为偏差持续到下次源变化.
 
-    方法: 将切换月份的环比率替换为前后窗口的趋势均值, 然后从该点
-    重新链式计算后续价格(保留原始环比率, 只修正基准).
+    方法: 在切换月份, 用前窗口趋势率作为基准, 然后在过渡期内从基准率
+    渐变到实际率, 避免斜率突变. 过渡期后回到实际数据.
     """
     if not prices or len(prices) < 5:
         return prices, 0
@@ -42,6 +42,7 @@ def smooth_national_prices(prices, months):
     result = list(prices)
     fixed = 0
     w = NATIONAL_SWITCH_WINDOW
+    transition = NATIONAL_TRANSITION_MONTHS
 
     raw_rates = []
     for i in range(1, len(result)):
@@ -53,29 +54,39 @@ def smooth_national_prices(prices, months):
     for idx, m in enumerate(months):
         if m not in KNOWN_SWITCH_MONTHS:
             continue
-        if idx < w or idx >= len(result) - w:
+        if idx < w or idx >= len(result) - 1:
             continue
 
         rate_idx = idx - 1
         before_rates = raw_rates[max(0, rate_idx - w):rate_idx]
-        after_rates = raw_rates[rate_idx + 1:rate_idx + 1 + w]
 
-        if not before_rates or not after_rates:
+        if not before_rates:
             continue
 
-        trend_rate = (sum(before_rates) + sum(after_rates)) / (len(before_rates) + len(after_rates))
+        pre_trend = sum(before_rates) / len(before_rates)
         actual_rate = raw_rates[rate_idx]
-        deviation = actual_rate - trend_rate
+        deviation = actual_rate - pre_trend
 
         if abs(deviation) < 0.002:
             continue
 
-        result[idx] = round(result[idx - 1] * trend_rate)
+        for t in range(transition + 1):
+            ri = rate_idx + t
+            if ri >= len(raw_rates):
+                break
+
+            blend = t / transition
+            blended_rate = pre_trend + (raw_rates[ri] - pre_trend) * blend
+            raw_rates[ri] = blended_rate
+
+        result[idx] = round(result[idx - 1] * raw_rates[rate_idx])
         fixed += 1
 
         for j in range(idx + 1, len(result)):
             if j - 1 < len(raw_rates):
                 result[j] = round(result[j - 1] * raw_rates[j - 1])
+
+    return result, fixed
 
     return result, fixed
 
