@@ -568,15 +568,13 @@ Page({
       ctx.fillText(months[j], toX(j), h - 8)
     }
 
+    ctx.textAlign = 'left'
+    ctx.fillText('涨跌幅', padL, padT - 8)
     ctx.textAlign = 'right'
     for (var k = 0; k < 5; k++) {
       var val = minV + (range / 4) * (4 - k)
       ctx.fillText((val > 0 ? '+' : '') + val.toFixed(1) + '%', padL - 4, padT + (ch / 4) * k + 3)
     }
-
-    series.forEach(function(s) {
-      ctx.strokeStyle = s.color
-      ctx.lineWidth = s.width
       ctx.setLineDash(s.dash || [])
       ctx.beginPath()
       for (var i = 0; i < s.data.length; i++) {

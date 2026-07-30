@@ -245,14 +245,14 @@
         </view>
         <view class="hz-right">
           <text class="mono fw700 fs13">{{item.priceStr}}</text>
-          <text class="mono fs11 {{item.ycCls}}">{{item.ycStr}}</text>
+          <text class="mono fs11 {{item.ycCls}}">年{{item.ycStr}}</text>
         </view>
       </view>
       <view class="hz-bar-row">
         <view class="hz-bar-bg">
           <view class="hz-bar-fill {{item.m3c >= 0 ? 'bar-up' : 'bar-down'}}" style="width:{{item.barW}}%"></view>
         </view>
-        <text class="mono fs10 {{item.m3Cls}}">3月{{item.m3Str}}</text>
+        <text class="mono fs10 {{item.m3Cls}}">近3月{{item.m3Str}}</text>
       </view>
       <view class="hz-signals">
         <view class="signal-dot {{item.signals.sd ? 'signal-on' : 'signal-off'}}"></view>

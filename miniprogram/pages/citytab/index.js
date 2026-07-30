@@ -421,6 +421,8 @@ Page({
     ctx.fillStyle = '#999'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'
     var step = months.length > 13 ? 3 : 2
     for (var j = 0; j < months.length; j += step) ctx.fillText(months[j], toX(j), h - 8)
+    ctx.textAlign = 'left'
+    ctx.fillText('涨跌幅', padL, padT - 8)
     ctx.textAlign = 'right'
     for (var k = 0; k < 5; k++) {
       var val = minV + (range / 4) * (4 - k)
