@@ -507,14 +507,14 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: this.data.cityName + ' — 房产趋势看板',
+      title: this.data.cityName + ' — 楼市右侧信号',
       path: '/pages/citytab/index'
     }
   },
 
   onShareTimeline: function() {
     return {
-      title: (this.data.cityName || '') + '房价趋势 — 房产趋势看板'
+      title: (this.data.cityName || '') + '房价趋势 — 楼市右侧信号'
     }
   }
 })

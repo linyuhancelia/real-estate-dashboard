@@ -696,14 +696,14 @@ Page({
   onShareAppMessage: function() {
     var j = this.data.judge
     return {
-      title: this._cityName + ' — ' + (j.verdict || '房产趋势看板'),
+      title: this._cityName + ' — ' + (j.verdict || '楼市右侧信号'),
       path: '/pages/city/index?name=' + encodeURIComponent(this._cityName)
     }
   },
 
   onShareTimeline: function() {
     return {
-      title: this._cityName + '房价趋势 — 房产趋势看板',
+      title: this._cityName + '房价趋势 — 楼市右侧信号',
       query: 'name=' + encodeURIComponent(this._cityName || '')
     }
   }

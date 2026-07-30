@@ -246,14 +246,14 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '房产趋势看板 — ' + (this.data.natJudge.verdict || '数据驱动购房决策'),
+      title: '楼市右侧信号 — ' + (this.data.natJudge.verdict || '数据驱动购房决策'),
       path: '/pages/index/index'
     }
   },
 
   onShareTimeline: function() {
     return {
-      title: '房产趋势看板 — 125城房价走势一目了然'
+      title: '楼市右侧信号 — 125城房价走势一目了然'
     }
   }
 })

@@ -138,14 +138,14 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '城市排行榜 — 房产趋势看板',
+      title: '城市排行榜 — 楼市右侧信号',
       path: '/pages/rankings/index'
     }
   },
 
   onShareTimeline: function() {
     return {
-      title: '125城房价排行榜 — 房产趋势看板'
+      title: '125城房价排行榜 — 楼市右侧信号'
     }
   }
 })
