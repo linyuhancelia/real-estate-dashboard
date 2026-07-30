@@ -105,7 +105,7 @@
     <!-- 趋势图 -->
     <view class="card">
       <view class="section-header">
-        <text class="section-title">价格趋势（基期变化率）</text>
+        <text class="section-title">价格涨跌幅（基期{{trendBaseMonth}}）</text>
         <view class="period-bar">
           <text class="period-btn {{trendPeriod === '6月' ? 'active' : ''}}" bindtap="switchTrendPeriod" data-p="6月">6月</text>
           <text class="period-btn {{trendPeriod === '1年' ? 'active' : ''}}" bindtap="switchTrendPeriod" data-p="1年">1年</text>

@@ -16,6 +16,7 @@
 
     <!-- 时间筛选 + 趋势图 -->
     <view class="period-bar">
+      <text class="text-muted fs10" style="margin-right:8px">涨跌幅·基期{{chartBaseMonth}}</text>
       <text class="period-btn {{period === '6月' ? 'active' : ''}}" bindtap="switchPeriod" data-p="6月">6月</text>
       <text class="period-btn {{period === '1年' ? 'active' : ''}}" bindtap="switchPeriod" data-p="1年">1年</text>
       <text class="period-btn {{period === '2年' ? 'active' : ''}}" bindtap="switchPeriod" data-p="2年">2年</text>

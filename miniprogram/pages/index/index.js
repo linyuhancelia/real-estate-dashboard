@@ -156,6 +156,7 @@ Page({
 
     var n = PERIOD_MAP[this.data.period] || 13
     var months = fmt.monthsShort(meta.months).slice(-n)
+    this.setData({ chartBaseMonth: months[0] })
     var natBc = fmt.baselineChange(nat.prices.slice(-n))
     var shBc = fmt.baselineChange(sh.prices.slice(-n))
 
@@ -196,8 +197,6 @@ Page({
       ctx.fillText(months[j], toX(j), h - 8)
     }
 
-    ctx.textAlign = 'left'
-    ctx.fillText('涨跌幅(基期' + months[0] + ')', padL, padT - 10)
     ctx.textAlign = 'right'
     for (var k = 0; k < 5; k++) {
       var val = minV + (range / 4) * (4 - k)

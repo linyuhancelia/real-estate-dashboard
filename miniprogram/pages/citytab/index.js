@@ -400,6 +400,7 @@ Page({
     var d = this._cityData, nat = g.national
     var n = PERIOD_MAP[this.data.trendPeriod] || 13
     var months = fmt.monthsShort(g.meta.months).slice(-n)
+    this.setData({ trendBaseMonth: months[0] })
     var cityBc = fmt.baselineChange(d.prices.slice(-n))
     var natBc = fmt.baselineChange(nat.prices.slice(-n))
 
@@ -421,8 +422,6 @@ Page({
     ctx.fillStyle = '#999'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'
     var step = months.length > 13 ? 3 : 2
     for (var j = 0; j < months.length; j += step) ctx.fillText(months[j], toX(j), h - 8)
-    ctx.textAlign = 'left'
-    ctx.fillText('涨跌幅(基期' + months[0] + ')', padL, padT - 8)
     ctx.textAlign = 'right'
     for (var k = 0; k < 5; k++) {
       var val = minV + (range / 4) * (4 - k)
