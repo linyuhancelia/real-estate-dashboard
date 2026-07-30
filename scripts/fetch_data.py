@@ -828,6 +828,11 @@ def merge_monthly_prices(anjuke_sparse: Dict[str, int],
                         creprice_monthly = {}
                     else:
                         fang_monthly = None
+                elif max(abs(v) for v in vals) > 0.08:
+                    if name == 'creprice':
+                        creprice_monthly = {}
+                    else:
+                        fang_monthly = None
 
     if not creprice_monthly and not fang_monthly:
         return interpolate_monthly(anjuke_sparse, num_months)

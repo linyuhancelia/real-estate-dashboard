@@ -86,7 +86,10 @@ def find_anomalies(prices, months=None, national_medians=None):
 
 
 def smooth(prices, months=None, national_medians=None):
-    """迭代平滑: 检测异常 → 锚点插值 → 重新检测, 直到收敛"""
+    """迭代平滑: 检测异常 → 锚点插值 → 重新检测, 直到收敛
+
+    特殊处理: 当异常延续到序列末尾(无右锚点)时, 用前趋势外推替代插值.
+    """
     if not prices or len(prices) < 3:
         return prices, 0
 
@@ -116,6 +119,20 @@ def smooth(prices, months=None, national_medians=None):
                     if new_val != result[j]:
                         result[j] = new_val
                         round_fixed += 1
+            elif left >= 0 and left not in bad and (right >= len(result) - 1):
+                trend_window = min(6, left)
+                if trend_window >= 2:
+                    trend_rates = []
+                    for t in range(left - trend_window + 1, left + 1):
+                        if t > 0 and result[t - 1] > 0:
+                            trend_rates.append(result[t] / result[t - 1])
+                    if trend_rates:
+                        avg_rate = sum(trend_rates) / len(trend_rates)
+                        for j in range(left + 1, len(result)):
+                            new_val = round(result[j - 1] * avg_rate)
+                            if new_val != result[j]:
+                                result[j] = new_val
+                                round_fixed += 1
 
         total_fixed += round_fixed
         if round_fixed == 0:
