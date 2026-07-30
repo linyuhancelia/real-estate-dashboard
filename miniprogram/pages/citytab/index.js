@@ -510,5 +510,11 @@ Page({
       title: this.data.cityName + ' — 房产趋势看板',
       path: '/pages/citytab/index'
     }
+  },
+
+  onShareTimeline: function() {
+    return {
+      title: (this.data.cityName || '') + '房价趋势 — 房产趋势看板'
+    }
   }
 })

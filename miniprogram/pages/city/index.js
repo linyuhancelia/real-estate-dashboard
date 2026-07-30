@@ -699,5 +699,12 @@ Page({
       title: this._cityName + ' — ' + (j.verdict || '房产趋势看板'),
       path: '/pages/city/index?name=' + encodeURIComponent(this._cityName)
     }
+  },
+
+  onShareTimeline: function() {
+    return {
+      title: this._cityName + '房价趋势 — 房产趋势看板',
+      query: 'name=' + encodeURIComponent(this._cityName || '')
+    }
   }
 })
