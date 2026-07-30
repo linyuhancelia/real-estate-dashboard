@@ -575,6 +575,10 @@ Page({
       var val = minV + (range / 4) * (4 - k)
       ctx.fillText((val > 0 ? '+' : '') + val.toFixed(1) + '%', padL - 4, padT + (ch / 4) * k + 3)
     }
+
+    series.forEach(function(s) {
+      ctx.strokeStyle = s.color
+      ctx.lineWidth = s.width || 1.5
       ctx.setLineDash(s.dash || [])
       ctx.beginPath()
       for (var i = 0; i < s.data.length; i++) {
