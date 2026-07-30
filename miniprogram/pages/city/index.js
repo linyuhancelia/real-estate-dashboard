@@ -703,7 +703,7 @@ Page({
 
   onShareTimeline: function() {
     return {
-      title: this._cityName + '房价趋势 — 楼市右侧信号',
+      title: '城市房价趋势 — 楼市右侧信号',
       query: 'name=' + encodeURIComponent(this._cityName || '')
     }
   }

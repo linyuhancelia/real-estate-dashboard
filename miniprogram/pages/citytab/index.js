@@ -514,7 +514,7 @@ Page({
 
   onShareTimeline: function() {
     return {
-      title: (this.data.cityName || '') + '房价趋势 — 楼市右侧信号'
+      title: '城市房价趋势 — 楼市右侧信号'
     }
   }
 })
