@@ -89,3 +89,55 @@
   text-align: center;
   padding: 20px 0 40px;
 }
+
+/* City Picker Modal */
+.picker-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  display: flex;
+  align-items: flex-end;
+}
+.picker-panel {
+  width: 100%;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.picker-close {
+  font-size: 22px;
+  color: #999;
+  padding: 4px 8px;
+}
+.picker-input {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.picker-list {
+  max-height: 40vh;
+}
+.picker-item {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 14px;
+}
+.picker-item:active {
+  background: #f0f7ff;
+}
+.picker-empty {
+  padding: 20px;
+  text-align: center;
+}

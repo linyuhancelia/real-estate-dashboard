@@ -197,7 +197,7 @@ Page({
     }
 
     ctx.textAlign = 'left'
-    ctx.fillText('涨跌幅', padL, padT - 10)
+    ctx.fillText('涨跌幅(基期' + months[0] + ')', padL, padT - 10)
     ctx.textAlign = 'right'
     for (var k = 0; k < 5; k++) {
       var val = minV + (range / 4) * (4 - k)

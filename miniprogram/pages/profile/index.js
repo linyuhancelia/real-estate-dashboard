@@ -14,7 +14,10 @@ Page({
     cityCount: 0,
     cacheSize: '',
     showMethod: true,
-    allCityNames: []
+    allCityNames: [],
+    showPicker: false,
+    pickerSearch: '',
+    pickerList: []
   },
 
   onLoad: function() {
@@ -112,19 +115,29 @@ Page({
     var existing = {}
     fav.forEach(function(n) { existing[n] = true })
     var available = allNames.filter(function(n) { return !existing[n] })
+    this.setData({ showPicker: true, pickerSearch: '', pickerList: available.slice(0, 15) })
+    this._pickerAvailable = available
+  },
 
-    var self = this
-    wx.showActionSheet({
-      itemList: available.slice(0, 20),
-      success: function(res) {
-        var selected = available[res.tapIndex]
-        if (selected) {
-          fav.push(selected)
-          self._saveFav(fav)
-          self._buildFavDetails()
-        }
-      }
-    })
+  onPickerSearch: function(e) {
+    var val = e.detail.value || ''
+    var available = this._pickerAvailable || []
+    var filtered = val ? available.filter(function(n) { return n.indexOf(val) >= 0 }) : available
+    this.setData({ pickerSearch: val, pickerList: filtered.slice(0, 15) })
+  },
+
+  onPickerSelect: function(e) {
+    var name = e.currentTarget.dataset.name
+    var fav = this.data.favCities.slice()
+    fav.push(name)
+    this._saveFav(fav)
+    this._buildFavDetails()
+    this.setData({ showPicker: false })
+    wx.showToast({ title: '已关注' + name, icon: 'success' })
+  },
+
+  onPickerClose: function() {
+    this.setData({ showPicker: false })
   },
 
   removeFav: function(e) {
