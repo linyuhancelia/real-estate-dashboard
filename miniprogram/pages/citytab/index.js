@@ -236,12 +236,17 @@ Page({
 
   _loadDetail: function(name) {
     var self = this
+    var g = app.globalData
     dataService.loadCityDetail(name).then(function(detail) {
       if (detail.property_types) self._buildPropertyTypes(detail.property_types)
       if (detail.hot_zones) self._buildHotZones(detail.hot_zones)
       if (detail.area_rings) self._buildAreaRings(detail.area_rings)
       self.setData({ detailLoaded: true })
     }).catch(function() {
+      var fallback = g.cities[name] || {}
+      if (fallback.property_types) self._buildPropertyTypes(fallback.property_types)
+      if (fallback.hot_zones) self._buildHotZones(fallback.hot_zones)
+      if (fallback.area_rings) self._buildAreaRings(fallback.area_rings)
       self.setData({ detailLoaded: true })
     })
   },

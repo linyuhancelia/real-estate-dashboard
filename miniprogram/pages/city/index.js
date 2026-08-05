@@ -185,6 +185,7 @@ Page({
 
   loadDetail: function(name) {
     var self = this
+    var g = app.globalData
     dataService.loadCityDetail(name).then(function(detail) {
       self._detail = detail
 
@@ -207,6 +208,18 @@ Page({
       self.setData({ detailLoaded: true })
     }).catch(function(err) {
       console.error('[city] loadDetail failed:', err)
+      var fallback = g.cities[name] || {}
+      var currentTargets = self.data.signalTargets.slice()
+      if (fallback.property_types) {
+        self.buildPropertyTypes(fallback.property_types, currentTargets)
+        currentTargets = self.data.signalTargets.slice()
+      }
+      if (fallback.hot_zones) {
+        self.buildHotZones(fallback.hot_zones, currentTargets)
+      }
+      if (fallback.area_rings) {
+        self.buildAreaRings(fallback.area_rings)
+      }
       self.setData({ detailLoaded: true })
     })
   },
