@@ -44,25 +44,12 @@ Page({
     var diff = Math.abs(syc - nyc).toFixed(1)
     var shVsNat = (syc > nyc ? '跑赢' : '跑输') + '全国' + diff + 'pp'
 
-    var top1 = null
-    var maxAbs3m = 0
-    Object.keys(cities).forEach(function(name) {
-      if (name === '上海') return
-      var c = cities[name]
-      if (!algo.isReliable(c.prices)) return
-      var m3 = Math.abs(algo.cC(c.prices, 3))
-      if (m3 > maxAbs3m) {
-        maxAbs3m = m3
-        var raw = algo.cC(c.prices, 3)
-        top1 = { name: name, prices: c.prices, m3: raw, tier: c.tier }
-      }
-    })
+    var top1 = algo.getTopRiser(cities)
     this._top1City = top1
 
     var top1Text = ''
     if (top1) {
-      var dir = top1.m3 > 0 ? '上涨' : '下跌'
-      top1Text = '近3月异动最大城市：' + top1.name + '（' + top1.tier + '），' + dir + fmt.fc(top1.m3) + '，已在图中标注'
+      top1Text = '近3月涨幅最大城市：' + top1.name + '（' + top1.tier + '），上涨' + fmt.fc(top1.m3) + '，已在图中标注'
     }
 
     this.setData({
@@ -107,10 +94,17 @@ Page({
       var avgPrice = Math.round(list.reduce(function(s, c) { return s + c.price }, 0) / count)
       var avgYc = list.reduce(function(s, c) { return s + c.yc }, 0) / count
 
-      var reliable = list.filter(function(c) { return c.reliable })
+      var reliable = list.filter(function(c) { return c.reliable && algo.isNbsCity(c.name) })
+      if (reliable.length === 0) reliable = list.filter(function(c) { return c.reliable })
       if (reliable.length === 0) reliable = list
-      reliable.sort(function(a, b) { return b.absM3 - a.absM3 })
-      var top1 = reliable[0]
+      var risers = reliable.filter(function(c) { return c.m3 > 0 })
+      if (risers.length > 0) {
+        risers.sort(function(a, b) { return b.m3 - a.m3 })
+        var top1 = risers[0]
+      } else {
+        reliable.sort(function(a, b) { return b.absM3 - a.absM3 })
+        var top1 = reliable[0]
+      }
 
       return {
         tier: tier,

@@ -169,6 +169,30 @@ function mktJudge(p, v) {
   return { verdict: '方向不明', conf: 1, cls: 'ti', detail: '多空交织，暂无明确趋势', hint: '观望' }
 }
 
+var NBS_CITIES = ['北京','上海','广州','深圳','天津','石家庄','太原','呼和浩特','沈阳','大连','长春','哈尔滨','南京','杭州','宁波','合肥','福州','厦门','南昌','济南','青岛','郑州','武汉','长沙','南宁','海口','重庆','成都','贵阳','昆明','西安','兰州','西宁','银川','乌鲁木齐','唐山','秦皇岛','包头','丹东','锦州','吉林','牡丹江','无锡','徐州','扬州','温州','金华','蚌埠','安庆','泉州','九江','赣州','烟台','济宁','洛阳','平顶山','宜昌','襄阳','岳阳','常德','韶关','湛江','惠州','桂林','北海','三亚','泸州','南充','遵义','大理']
+
+function isNbsCity(name) {
+  return NBS_CITIES.indexOf(name) >= 0
+}
+
+function getTopRiser(cities) {
+  var entries = Object.keys(cities)
+    .filter(function(n) {
+      if (n === '上海') return false
+      if (!isNbsCity(n)) return false
+      var c = cities[n]
+      if (!isReliable(c.prices)) return false
+      var m3 = cC(c.prices, 3)
+      return m3 > 0
+    })
+    .map(function(n) {
+      var c = cities[n]
+      return { name: n, prices: c.prices, m3: cC(c.prices, 3), tier: c.tier }
+    })
+    .sort(function(a, b) { return b.m3 - a.m3 })
+  return entries[0] || null
+}
+
 function getTop1(cities, natPrices, allPrices) {
   var hasData = function(p) {
     var t = p.slice(-7)
@@ -194,6 +218,8 @@ module.exports = {
   vpDx: vpDx,
   mktJudge: mktJudge,
   getTop1: getTop1,
+  getTopRiser: getTopRiser,
+  isNbsCity: isNbsCity,
   isReliable: isReliable,
   detectJumps: detectJumps
 }

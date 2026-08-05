@@ -94,8 +94,8 @@
       <text class="fs11 text-muted">分析近期价格与成交量的联动关系：量价齐升（健康上行）/价升量缩（缺乏量能支撑）/量升价跌（以价换量）/量价齐跌（深度调整）/缩量盘整（观望僵持）。已融合至物业、板块、信号灯各维度展示</text>
     </view>
     <view class="method-item">
-      <text class="fw600 fs12">异动城市</text>
-      <text class="fs11 text-muted">大盘页Top1异动城市取近3月绝对变化最大的城市。数据经过4层清洗：绝对环比>2.5%、偏离全城中位数>2.5%、脉冲反转>2%、MAD统计异常值，确保展示结果可信</text>
+      <text class="fw600 fs12">涨幅最大城市</text>
+      <text class="fs11 text-muted">大盘页Top1取近3月涨幅最大的NBS 70城（国家统计局监测范围）。仅展示上涨城市，排除数据准确性无法验证的非监测城市，确保展示结果可信可查证</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">数据说明</text>
