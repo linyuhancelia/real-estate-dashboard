@@ -146,27 +146,100 @@ function vpDx(ps, vs) {
 function mktJudge(p, v) {
   var n = p.length
   if (n < 6) return { verdict: '数据不足', conf: 0, cls: 'ti', detail: '', hint: '' }
+
   var m1 = cC(p, 1), m3 = cC(p, 3), m6 = cC(p, Math.min(6, n - 1))
   var mo = cMo(p)
-  var sg = dSg(p, v).s
   var dx = vpDx(p, v)
+
   var streak = 0, dir = p[n - 1] >= p[n - 2] ? 1 : -1
   for (var i = n - 1; i > 0; i--) {
     if ((p[i] >= p[i - 1] ? 1 : -1) === dir) streak++
     else break
   }
-  if (sg.rc) return { verdict: '趋势性回暖', conf: 5, cls: 'tp', detail: '量价齐升已确认，连续正涨' + streak + '月', hint: '可积极看房' }
-  if (sg.st && mo > 0.05) return { verdict: '止稳向好', conf: 4, cls: 'tp', detail: '价格走平+动量转正(' + mo.toFixed(2) + '%)，有转折迹象', hint: '可开始关注' }
-  if (sg.st) return { verdict: '底部盘整', conf: 3, cls: 'tn', detail: '波动极小，等待方向突破', hint: '继续观察1-2月' }
-  if (sg.sd && m1 > 0) return { verdict: '止跌反弹', conf: 3, cls: 'tn', detail: '跌幅收窄+最新月转正，需连续确认', hint: '关注下月能否持续' }
-  if (sg.sd) return { verdict: '止跌企稳', conf: 2, cls: 'tn', detail: '跌幅在收窄，尚未转正', hint: '底部信号初现，继续观望' }
-  if (m3 > 0 && m6 < -1) return { verdict: '技术性反弹', conf: 2, cls: 'tn', detail: '短期转正但中期仍跌' + m6.toFixed(1) + '%，可能超跌反弹', hint: '不宜追涨，等待确认' }
-  if (Math.abs(m3) < 0.5 && Math.abs(m1) < 0.3) return { verdict: '窄幅震荡', conf: 2, cls: 'ti', detail: '近3月波动仅' + m3.toFixed(1) + '%，方向不明', hint: '观望等待信号' }
-  if (m3 < 0 && mo > 0) return { verdict: '跌幅收窄', conf: 2, cls: 'tn', detail: '仍在下跌但速度放缓(动量+' + mo.toFixed(2) + '%)', hint: '下行减速，留意拐点' }
-  if (m3 < 0 && mo <= 0) return { verdict: '持续下行', conf: 1, cls: 'tng', detail: '近3月' + m3.toFixed(1) + '%，跌势未减', hint: '建议等待止跌信号' }
-  if (m3 > 0 && dx.tag === '量价齐升') return { verdict: '健康上行', conf: 4, cls: 'tp', detail: '涨价有成交支撑，上涨可持续', hint: '较好的入场时机' }
-  if (m3 > 0 && mo > 0) return { verdict: '温和上行', conf: 3, cls: 'tp', detail: '近3月+' + m3.toFixed(1) + '%，动量仍在加速', hint: '趋势向好但需确认量能' }
-  return { verdict: '方向不明', conf: 1, cls: 'ti', detail: '多空交织，暂无明确趋势', hint: '观望' }
+
+  var rv = v.slice(-3).reduce(function(a, b) { return a + b }, 0) / 3
+  var pv = v.slice(-9, -3)
+  var pvA = pv.length ? pv.reduce(function(a, b) { return a + b }, 0) / pv.length : rv
+  var vRatio = pvA > 0 ? rv / pvA : 1
+
+  // === 上行市场 (m3 > 0.5%) ===
+  if (m3 > 0.5) {
+    if (streak >= 4 && mo > 0.05 && vRatio > 1.05) {
+      return { verdict: '趋势性回暖', conf: 5, cls: 'tp',
+        detail: '连涨' + streak + '月，量价齐升，动量加速中',
+        hint: '上行趋势确立，可积极看房' }
+    }
+    if (streak >= 4 && vRatio >= 0.85) {
+      return { verdict: '稳步上行', conf: 4, cls: 'tp',
+        detail: '连涨' + streak + '月(+' + m3.toFixed(1) + '%)，成交平稳',
+        hint: '上行通道中，趋势延续' }
+    }
+    if (m3 > 0.5 && m6 < -2) {
+      return { verdict: '超跌反弹', conf: 2, cls: 'tn',
+        detail: '短期+' + m3.toFixed(1) + '%，但半年仍跌' + m6.toFixed(1) + '%',
+        hint: '反弹持续性待验证，不宜追涨' }
+    }
+    if (vRatio < 0.8 && streak >= 2) {
+      return { verdict: '缩量上涨', conf: 2, cls: 'tn',
+        detail: '价涨+' + m3.toFixed(1) + '%但量缩' + ((1 - vRatio) * 100).toFixed(0) + '%',
+        hint: '上涨缺乏买盘支撑，警惕回调' }
+    }
+    if (mo > 0) {
+      return { verdict: '温和回升', conf: 3, cls: 'tp',
+        detail: '近3月+' + m3.toFixed(1) + '%，动量+' + mo.toFixed(2) + '%加速中',
+        hint: '趋势向好，可关注' }
+    }
+    return { verdict: '上行放缓', conf: 3, cls: 'tn',
+      detail: '仍涨+' + m3.toFixed(1) + '%但涨幅收窄(动量' + mo.toFixed(2) + '%)',
+      hint: '趋势未逆转但力度减弱，关注量能' }
+  }
+
+  // === 下行市场 (m3 < -0.5%) ===
+  if (m3 < -0.5) {
+    if (mo < -0.08 && vRatio > 1.1) {
+      return { verdict: '加速下行', conf: 1, cls: 'tng',
+        detail: '跌幅扩大(动量' + mo.toFixed(2) + '%)且放量抛售',
+        hint: '趋势恶化，建议观望' }
+    }
+    if (mo <= 0) {
+      return { verdict: '持续下行', conf: 1, cls: 'tng',
+        detail: '近3月' + m3.toFixed(1) + '%，跌势未减',
+        hint: '下行通道中，等待止跌信号' }
+    }
+    if (mo > 0 && m1 > -0.1) {
+      return { verdict: '止跌企稳', conf: 2, cls: 'tn',
+        detail: '跌幅快速收窄，最新月仅' + m1.toFixed(2) + '%',
+        hint: '底部信号初现，关注连续性' }
+    }
+    return { verdict: '跌幅收窄', conf: 2, cls: 'tn',
+      detail: '仍跌' + m3.toFixed(1) + '%但速度放缓(动量+' + mo.toFixed(2) + '%)',
+      hint: '下行减速，留意拐点' }
+  }
+
+  // === 盘整市场 (|m3| <= 0.5%) ===
+  if (m1 > 0.2 && m6 < -1.5) {
+    return { verdict: '止跌反弹', conf: 2, cls: 'tn',
+      detail: '最新月转正+' + m1.toFixed(2) + '%，半年仍跌' + m6.toFixed(1) + '%',
+      hint: '需连续确认，单月不构成趋势' }
+  }
+  if (m6 < -1) {
+    if (mo > 0.05) {
+      return { verdict: '止稳向好', conf: 3, cls: 'tn',
+        detail: '跌后企稳，动量已转正(+' + mo.toFixed(2) + '%)',
+        hint: '有转折迹象，可开始关注' }
+    }
+    return { verdict: '底部盘整', conf: 2, cls: 'tn',
+      detail: '跌势已止，近3月波动' + m3.toFixed(2) + '%',
+      hint: '底部构筑中，等待方向突破' }
+  }
+  if (m6 > 1) {
+    return { verdict: '高位整理', conf: 3, cls: 'tn',
+      detail: '涨后进入整理，半年+' + m6.toFixed(1) + '%',
+      hint: '消化涨幅中，关注方向选择' }
+  }
+  return { verdict: '窄幅震荡', conf: 2, cls: 'ti',
+    detail: '近3月波动' + m3.toFixed(2) + '%，方向不明',
+    hint: '观望等待信号' }
 }
 
 var NBS_CITIES = ['北京','上海','广州','深圳','天津','石家庄','太原','呼和浩特','沈阳','大连','长春','哈尔滨','南京','杭州','宁波','合肥','福州','厦门','南昌','济南','青岛','郑州','武汉','长沙','南宁','海口','重庆','成都','贵阳','昆明','西安','兰州','西宁','银川','乌鲁木齐','唐山','秦皇岛','包头','丹东','锦州','吉林','牡丹江','无锡','徐州','扬州','温州','金华','蚌埠','安庆','泉州','九江','赣州','烟台','济宁','洛阳','平顶山','宜昌','襄阳','岳阳','常德','韶关','湛江','惠州','桂林','北海','三亚','泸州','南充','遵义','大理']
