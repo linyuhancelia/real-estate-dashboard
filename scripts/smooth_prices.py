@@ -1,10 +1,18 @@
 """
-smooth_prices.py — 全量城市数据清洗引擎
+smooth_prices.py — 全量城市数据清洗引擎 v5 (NBS校验层)
 
-三层防线:
-1. 城市级异常检测 — 绝对环比上限 + 偏离全城中位数 + 脉冲反转 + MAD
-2. 城市级插值修复 — 异常区间两端锚定, 中间线性插值, 迭代收敛
-3. 全国级过渡平滑 — 源切换月份斜率渐变, 消除系统性台阶
+核心算法: 首月锚定 + NBS权威率替代 + 前向率重建
+
+v5 升级要点:
+- NBS 70城二手住宅月度环比作为权威数据源
+- 对于NBS覆盖的城市: 直接使用NBS环比率替代爬虫率
+- 对于非NBS城市: 保持v4逻辑(率clamp + 前向邻居替换)
+- NBS数据未覆盖的月份(如2026/07+): 回退到v4逻辑
+
+效果:
+- 彻底消除"数据源切换造成的方向性错误"
+- 广州等一线城市走势与官方数据完全一致
+- 西宁等二三线城市使用城市级均值校正方向
 """
 import json
 import os
@@ -12,215 +20,184 @@ import statistics
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
 
-KNOWN_SWITCH_MONTHS = {'2024/08', '2025/08', '2026/01'}
-
-MAX_ABS_MOM = 0.025
-MAX_DEVIATION_FROM_MEDIAN = 0.025
-PULSE_THRESHOLD = 0.02
-MAD_MULTIPLIER = 3.5
-MAX_ROUNDS = 8
-
-NATIONAL_SWITCH_WINDOW = 3
-NATIONAL_TRANSITION_MONTHS = 4
+MAX_MOM = 0.02  # 单月环比硬上限 ±2% (仅用于非NBS城市)
 
 
-def compute_mom_rates(prices):
+def load_nbs_data():
+    """加载NBS 70城校验数据."""
+    nbs_path = os.path.join(DATA_DIR, 'nbs_70city.json')
+    if not os.path.exists(nbs_path):
+        return None
+    with open(nbs_path) as f:
+        return json.load(f)
+
+
+def get_city_tier(city_name, nbs):
+    """确定城市所属层级."""
+    if not nbs:
+        return None
+    for tier, cities in nbs['tier_cities'].items():
+        if city_name in cities:
+            return tier
+    return None
+
+
+def get_nbs_rate(city_name, month_key, nbs):
+    """获取某城市某月的NBS环比率.
+
+    优先级: 城市专项数据 > 层级均值 > None(无数据)
+    """
+    if not nbs or month_key not in nbs['monthly_rates']:
+        return None
+
+    month_data = nbs['monthly_rates'][month_key]
+
+    if city_name in month_data.get('cities', {}):
+        return month_data['cities'][city_name]
+
+    tier = get_city_tier(city_name, nbs)
+    if tier and tier in month_data.get('tier_avg', {}):
+        return month_data['tier_avg'][tier]
+
+    return None
+
+
+def extract_and_clean_rates(prices):
+    """从原始序列提取环比率, 异常率替换为前向趋势 (v4逻辑, 用于非NBS城市)."""
     rates = []
     for i in range(1, len(prices)):
-        if prices[i - 1] > 0:
-            rates.append((prices[i] - prices[i - 1]) / prices[i - 1])
+        if prices[i - 1] > 0 and prices[i] > 0:
+            rates.append(prices[i] / prices[i - 1] - 1)
         else:
             rates.append(0.0)
-    return rates
+
+    cleaned = list(rates)
+    for i in range(len(cleaned)):
+        if abs(cleaned[i]) > MAX_MOM:
+            neighbors = []
+            for j in range(max(0, i - 6), i):
+                if abs(rates[j]) <= MAX_MOM:
+                    neighbors.append(rates[j])
+            if neighbors:
+                cleaned[i] = statistics.median(neighbors)
+            else:
+                for j in range(i + 1, min(len(rates), i + 4)):
+                    if abs(rates[j]) <= MAX_MOM:
+                        cleaned[i] = rates[j]
+                        break
+                else:
+                    cleaned[i] = 0.0
+
+    return cleaned
 
 
-def mad_outliers(rates, multiplier=MAD_MULTIPLIER):
-    if len(rates) < 5:
-        return set()
-    median = statistics.median(rates)
-    abs_devs = [abs(r - median) for r in rates]
-    mad = statistics.median(abs_devs)
-    if mad < 0.001:
-        mad = 0.001
-    threshold = multiplier * mad * 1.4826
-    outliers = set()
-    for i, r in enumerate(rates):
-        if abs(r - median) > threshold:
-            outliers.add(i + 1)
-    return outliers
-
-
-def find_anomalies(prices, months=None, national_medians=None):
-    """综合异常检测
-
-    检测条件 (满足任一即标记):
-    1. |环比| > 2.5% (城市均价不应有这么大的月波动)
-    2. |城市环比 - 全城中位数| > 2.5% (偏离大盘过远)
-    3. 脉冲反转: 涨了立刻跌(或反向), 且幅度 > 2%
-    4. MAD统计异常值 (3.5倍MAD)
-    """
-    if not prices or len(prices) < 3:
-        return set()
-
-    bad = set()
-    rates = compute_mom_rates(prices)
-
-    for i, r in enumerate(rates):
-        idx = i + 1
-        if abs(r) > MAX_ABS_MOM:
-            bad.add(idx)
-
-        if national_medians and i < len(national_medians):
-            if abs(r - national_medians[i]) > MAX_DEVIATION_FROM_MEDIAN:
-                bad.add(idx)
-
-    for i in range(1, len(prices) - 1):
-        chg1 = (prices[i] - prices[i - 1]) / prices[i - 1] if prices[i - 1] > 0 else 0
-        chg2 = (prices[i + 1] - prices[i]) / prices[i] if prices[i] > 0 else 0
-        if chg1 * chg2 < 0 and abs(chg1) > PULSE_THRESHOLD and abs(chg2) > PULSE_THRESHOLD:
-            bad.add(i)
-
-    bad.update(mad_outliers(rates))
-
-    return bad
-
-
-def smooth(prices, months=None, national_medians=None):
-    """迭代平滑: 检测异常 → 锚点插值 → 重新检测, 直到收敛
-
-    特殊处理: 当异常延续到序列末尾(无右锚点)时, 用前趋势外推替代插值.
-    """
-    if not prices or len(prices) < 3:
-        return prices, 0
-
-    result = list(prices)
-    total_fixed = 0
-
-    for _round in range(MAX_ROUNDS):
-        bad = find_anomalies(result, months, national_medians)
-        if not bad:
-            break
-
-        round_fixed = 0
-        sorted_bad = sorted(bad)
-
-        for i in sorted_bad:
-            left = i - 1
-            while left in bad and left > 0:
-                left -= 1
-            right = i + 1
-            while right in bad and right < len(result) - 1:
-                right += 1
-
-            if left >= 0 and left not in bad and right < len(result) and right not in bad and right > left:
-                for j in range(left + 1, right):
-                    ratio = (j - left) / (right - left)
-                    new_val = round(result[left] + (result[right] - result[left]) * ratio)
-                    if new_val != result[j]:
-                        result[j] = new_val
-                        round_fixed += 1
-            elif left >= 0 and left not in bad and (right >= len(result) - 1):
-                trend_window = min(6, left)
-                if trend_window >= 2:
-                    trend_rates = []
-                    for t in range(left - trend_window + 1, left + 1):
-                        if t > 0 and result[t - 1] > 0:
-                            trend_rates.append(result[t] / result[t - 1])
-                    if trend_rates:
-                        avg_rate = sum(trend_rates) / len(trend_rates)
-                        for j in range(left + 1, len(result)):
-                            new_val = round(result[j - 1] * avg_rate)
-                            if new_val != result[j]:
-                                result[j] = new_val
-                                round_fixed += 1
-
-        total_fixed += round_fixed
-        if round_fixed == 0:
-            break
-
-    return result, total_fixed
-
-
-def smooth_national_prices(prices, months):
-    """全国均价专用平滑: 源切换过渡期斜率渐变"""
-    if not prices or len(prices) < 5:
-        return prices, 0
-
-    result = list(prices)
-    fixed = 0
-    w = NATIONAL_SWITCH_WINDOW
-    transition = NATIONAL_TRANSITION_MONTHS
-
-    raw_rates = []
-    for i in range(1, len(result)):
-        if result[i - 1] > 0:
-            raw_rates.append(result[i] / result[i - 1])
+def extract_and_clean_rates_nbs(prices, months, city_name, nbs):
+    """NBS校验版: 对NBS覆盖月份直接替换率, 非覆盖月份走v4逻辑."""
+    rates = []
+    for i in range(1, len(prices)):
+        if prices[i - 1] > 0 and prices[i] > 0:
+            rates.append(prices[i] / prices[i - 1] - 1)
         else:
-            raw_rates.append(1.0)
+            rates.append(0.0)
 
-    for idx, m in enumerate(months):
-        if m not in KNOWN_SWITCH_MONTHS:
-            continue
-        if idx < w or idx >= len(result) - 1:
-            continue
+    cleaned = list(rates)
+    nbs_replaced = 0
 
-        rate_idx = idx - 1
-        before_rates = raw_rates[max(0, rate_idx - w):rate_idx]
+    for i in range(len(cleaned)):
+        month_key = months[i + 1] if (i + 1) < len(months) else None
+        nbs_rate = get_nbs_rate(city_name, month_key, nbs) if month_key else None
 
-        if not before_rates:
-            continue
+        if nbs_rate is not None:
+            cleaned[i] = nbs_rate
+            nbs_replaced += 1
+        elif abs(cleaned[i]) > MAX_MOM:
+            neighbors = []
+            for j in range(max(0, i - 6), i):
+                if abs(rates[j]) <= MAX_MOM:
+                    neighbors.append(rates[j])
+            if neighbors:
+                cleaned[i] = statistics.median(neighbors)
+            else:
+                for j in range(i + 1, min(len(rates), i + 4)):
+                    if abs(rates[j]) <= MAX_MOM:
+                        cleaned[i] = rates[j]
+                        break
+                else:
+                    cleaned[i] = 0.0
 
-        pre_trend = sum(before_rates) / len(before_rates)
-        actual_rate = raw_rates[rate_idx]
-        deviation = actual_rate - pre_trend
+    return cleaned, nbs_replaced
 
-        if abs(deviation) < 0.002:
-            continue
 
-        for t in range(transition + 1):
-            ri = rate_idx + t
-            if ri >= len(raw_rates):
+def rebuild_from_anchor(anchor_price, rates):
+    """从锚点价格出发, 用cleaned rates前向重建序列."""
+    result = [anchor_price]
+    for rate in rates:
+        clamped = max(-MAX_MOM, min(MAX_MOM, rate))
+        result.append(round(result[-1] * (1 + clamped)))
+    return result
+
+
+def rebuild_from_anchor_nbs(anchor_price, rates):
+    """NBS版重建: NBS率不做clamp (NBS数据本身就是权威的)."""
+    result = [anchor_price]
+    for rate in rates:
+        result.append(round(result[-1] * (1 + rate)))
+    return result
+
+
+def smooth_city(prices, months=None, city_name=None, nbs=None):
+    """对单个城市完整清洗."""
+    if not prices or len(prices) < 3:
+        return list(prices), 0, 0
+
+    anchor = prices[0]
+    if anchor <= 0:
+        for i, p in enumerate(prices):
+            if p > 0:
+                anchor = p
                 break
-            blend = t / transition
-            raw_rates[ri] = pre_trend + (raw_rates[ri] - pre_trend) * blend
+        else:
+            return list(prices), 0, 0
 
-        result[idx] = round(result[idx - 1] * raw_rates[rate_idx])
-        fixed += 1
+    tier = get_city_tier(city_name, nbs) if city_name and nbs else None
 
-        for j in range(idx + 1, len(result)):
-            if j - 1 < len(raw_rates):
-                result[j] = round(result[j - 1] * raw_rates[j - 1])
+    if tier and months:
+        rates, nbs_count = extract_and_clean_rates_nbs(prices, months, city_name, nbs)
+        rebuilt = rebuild_from_anchor_nbs(anchor, rates)
+    else:
+        rates = extract_and_clean_rates(prices)
+        rebuilt = rebuild_from_anchor(anchor, rates)
+        nbs_count = 0
 
-    return result, fixed
+    fixes = sum(1 for a, b in zip(prices, rebuilt) if a != b)
+    return rebuilt, fixes, nbs_count
 
 
 def full_clean(summary):
-    """全量清洗: 所有城市 + 全国均价, 返回修改统计"""
+    """全量清洗: 所有城市 + 全国均价重算."""
     months = summary['meta']['months']
     n_months = len(months)
     city_files = summary['meta'].get('city_files', {})
     city_dir = os.path.join(DATA_DIR, 'city')
 
-    # Pass 1: compute national median MoM per month (for cross-city comparison)
-    all_rates = []
-    for city in summary['cities'].values():
-        rates = compute_mom_rates(city['prices'])
-        all_rates.append(rates)
+    nbs = load_nbs_data()
+    if nbs:
+        print(f'[v5] NBS校验层加载成功: {len(nbs["monthly_rates"])}个月数据')
+    else:
+        print('[v5] NBS数据未找到, 回退到v4纯算法模式')
 
-    national_medians = []
-    for mi in range(n_months - 1):
-        month_rates = [r[mi] for r in all_rates if mi < len(r)]
-        national_medians.append(statistics.median(month_rates))
-
-    # Pass 2: smooth all cities using national medians as reference
     results = []
-    total_points = 0
+    total_fixes = 0
+    total_nbs = 0
+
     for name, city in summary['cities'].items():
-        original = list(city['prices'])
-        smoothed, count = smooth(city['prices'], months, national_medians)
-        if count > 0:
+        smoothed, fixes, nbs_count = smooth_city(city['prices'], months, name, nbs)
+
+        if fixes > 0:
             city['prices'] = smoothed
-            total_points += count
+            total_fixes += fixes
+            results.append((name, fixes, nbs_count))
+            total_nbs += nbs_count
 
             code = city_files.get(name, name)
             city_path = os.path.join(city_dir, f'{code}.json')
@@ -231,42 +208,71 @@ def full_clean(summary):
                 with open(city_path, 'w') as f:
                     json.dump(detail, f, ensure_ascii=False, separators=(',', ':'))
 
-            def max_mom(p):
-                return max(abs((p[i]-p[i-1])/p[i-1]) for i in range(1,len(p)) if p[i-1]>0)
-            results.append((name, count, max_mom(original)*100, max_mom(smoothed)*100))
-
-    # Pass 3: recompute national average
+    # Recompute national average from cleaned city data
     all_prices = [c['prices'] for c in summary['cities'].values()]
     nat_prices = []
     for m in range(n_months):
         vals = [p[m] for p in all_prices if m < len(p) and p[m] > 0]
-        nat_prices.append(round(sum(vals) / len(vals)))
+        nat_prices.append(round(sum(vals) / len(vals)) if vals else 0)
 
-    # Pass 4: national transition smoothing
-    nat_smoothed, nat_fixed = smooth_national_prices(nat_prices, months)
+    nat_smoothed, nat_fixes, _ = smooth_city(nat_prices, months, '全国', nbs)
     summary['national']['prices'] = nat_smoothed
 
-    return results, total_points, nat_fixed
+    return results, total_fixes, nat_fixes, total_nbs
 
 
 def main():
     summary_path = os.path.join(DATA_DIR, 'summary.json')
-    with open(summary_path) as f:
-        summary = json.load(f)
 
-    results, total_points, nat_fixed = full_clean(summary)
+    latest_path = os.path.join(DATA_DIR, 'latest.json')
+    if os.path.exists(latest_path):
+        print('[v5] 使用 latest.json (原始爬虫数据) 作为输入')
+        with open(latest_path) as f:
+            summary = json.load(f)
+    else:
+        print('[v5] latest.json 不存在, 使用 summary.json')
+        with open(summary_path) as f:
+            summary = json.load(f)
+
+    results, total_fixes, nat_fixes, total_nbs = full_clean(summary)
 
     with open(summary_path, 'w') as f:
         json.dump(summary, f, ensure_ascii=False, separators=(',', ':'))
 
-    print(f'[CLEAN] 完成: {len(results)}个城市, {total_points}个数据点修正')
+    print(f'[CLEAN v5] 完成: {len(results)}个城市修正, 共{total_fixes}个数据点, NBS替代{total_nbs}个率')
     if results:
-        results.sort(key=lambda x: x[3] - x[2])
-        for name, count, old_mm, new_mm in results:
-            print(f'  {name}: {count}点, maxMoM {old_mm:.1f}%→{new_mm:.1f}%')
+        results.sort(key=lambda x: -x[1])
+        for name, fixes, nbs_count in results[:20]:
+            nbs_tag = f' (NBS×{nbs_count})' if nbs_count > 0 else ''
+            print(f'  {name}: {fixes}点{nbs_tag}')
 
-    if nat_fixed:
-        print(f'[CLEAN] 全国均价过渡平滑: {nat_fixed}个月份')
+    if nat_fixes:
+        print(f'[CLEAN v5] 全国均价: {nat_fixes}点修正')
+
+    # Verify: check max MoM
+    violations = 0
+    for name, city in summary['cities'].items():
+        for i in range(1, len(city['prices'])):
+            if city['prices'][i - 1] > 0:
+                rate = (city['prices'][i] - city['prices'][i - 1]) / city['prices'][i - 1]
+                if abs(rate) > 0.025:
+                    violations += 1
+                    if violations <= 5:
+                        print(f'  [WARN] {name} month {i}: {rate*100:.2f}%')
+
+    if violations == 0:
+        print(f'[CLEAN v5] 验证通过: 全部城市月环比 ≤ ±2.5%')
+    else:
+        print(f'[CLEAN v5] {violations}个超限点 (NBS数据允许略超±2%)')
+
+    # Show key city validation
+    print('\n[v5] 关键城市校验:')
+    for key_city in ['广州', '北京', '上海', '深圳', '西宁', '吉林']:
+        if key_city in summary['cities']:
+            p = summary['cities'][key_city]['prices']
+            if len(p) >= 2 and p[0] > 0 and p[-1] > 0:
+                total_change = (p[-1] - p[0]) / p[0] * 100
+                print(f'  {key_city}: {p[0]:,} → {p[-1]:,} ({total_change:+.1f}%)')
 
     # Update bundled JS
     bundled_path = os.path.join(os.path.dirname(DATA_DIR), 'miniprogram', 'data', 'bundled_summary.js')
@@ -274,10 +280,9 @@ def main():
         js = 'module.exports = ' + json.dumps(summary, ensure_ascii=False, separators=(',', ':'))
         with open(bundled_path, 'w') as f:
             f.write(js)
-        print(f'[CLEAN] bundled_summary.js ({len(js)//1024}KB)')
+        print(f'[CLEAN v5] bundled_summary.js ({len(js) // 1024}KB)')
 
-    city_files = summary['meta'].get('city_files', {})
-    print(f'[CLEAN] 文件已更新: summary.json + bundled + {len(city_files)}个城市文件')
+    print('[CLEAN v5] 完成')
 
 
 if __name__ == '__main__':
