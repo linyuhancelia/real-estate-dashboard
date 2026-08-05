@@ -96,7 +96,11 @@ function getCityCode(name) {
 function loadCityDetail(name) {
   var cacheKey = 'city_' + name
   var cached = getCached(cacheKey)
-  if (cached) return Promise.resolve(cached)
+  if (cached) {
+    var hz = cached.hot_zones
+    var hzCount = hz ? (Array.isArray(hz) ? hz.length : Object.keys(hz).length) : 0
+    if (hzCount > 3) return Promise.resolve(cached)
+  }
 
   var code = getCityCode(name)
   return requestWithFallback('/city/' + code + '.json').then(function(data) {
