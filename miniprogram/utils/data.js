@@ -56,21 +56,36 @@ function setCache(key, data) {
   }
 }
 
+function invalidateCityCache() {
+  try {
+    var keys = wx.getStorageInfoSync().keys
+    keys.forEach(function(k) {
+      if (k.indexOf('city_') === 0) {
+        wx.removeStorageSync(k)
+      }
+    })
+  } catch (e) {}
+}
+
 function loadSummary() {
   var cached = getCached('summary')
   if (cached) {
     _cityFiles = cached.meta.city_files || {}
-    return Promise.resolve(cached)
   }
 
-  _cityFiles = BUNDLED.meta.city_files || {}
+  _cityFiles = _cityFiles || BUNDLED.meta.city_files || {}
 
   requestWithFallback('/summary.json').then(function(data) {
+    var oldGen = cached && cached.meta ? cached.meta.generated_at : ''
+    var newGen = data.meta ? data.meta.generated_at : ''
+    if (oldGen && newGen && oldGen !== newGen) {
+      invalidateCityCache()
+    }
     _cityFiles = data.meta.city_files || {}
     setCache('summary', data)
   }).catch(function() {})
 
-  return Promise.resolve(BUNDLED)
+  return Promise.resolve(cached || BUNDLED)
 }
 
 function getCityCode(name) {
