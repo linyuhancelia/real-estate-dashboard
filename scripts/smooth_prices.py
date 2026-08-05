@@ -91,8 +91,21 @@ def extract_and_clean_rates(prices):
     return cleaned
 
 
+def get_latest_nbs_tier_rate(city_name, nbs):
+    """获取该城市最近一期可用的NBS层级均值, 用于延续覆盖."""
+    tier = get_city_tier(city_name, nbs)
+    if not tier or not nbs:
+        return None
+    sorted_months = sorted(nbs['monthly_rates'].keys(), reverse=True)
+    for m in sorted_months:
+        rate = nbs['monthly_rates'][m].get('tier_avg', {}).get(tier)
+        if rate is not None:
+            return rate
+    return None
+
+
 def extract_and_clean_rates_nbs(prices, months, city_name, nbs):
-    """NBS校验版: 对NBS覆盖月份直接替换率, 非覆盖月份走v4逻辑."""
+    """NBS校验版: 对NBS覆盖月份直接替换率, 超出覆盖范围延续最近NBS层级均值."""
     rates = []
     for i in range(1, len(prices)):
         if prices[i - 1] > 0 and prices[i] > 0:
@@ -102,6 +115,8 @@ def extract_and_clean_rates_nbs(prices, months, city_name, nbs):
 
     cleaned = list(rates)
     nbs_replaced = 0
+    latest_tier_rate = get_latest_nbs_tier_rate(city_name, nbs)
+    nbs_max_month = max(nbs['monthly_rates'].keys()) if nbs and nbs['monthly_rates'] else None
 
     for i in range(len(cleaned)):
         month_key = months[i + 1] if (i + 1) < len(months) else None
@@ -109,6 +124,9 @@ def extract_and_clean_rates_nbs(prices, months, city_name, nbs):
 
         if nbs_rate is not None:
             cleaned[i] = nbs_rate
+            nbs_replaced += 1
+        elif nbs_max_month and month_key and month_key > nbs_max_month and latest_tier_rate is not None:
+            cleaned[i] = latest_tier_rate
             nbs_replaced += 1
         elif abs(cleaned[i]) > MAX_MOM:
             neighbors = []
