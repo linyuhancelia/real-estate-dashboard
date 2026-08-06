@@ -96,9 +96,14 @@ function dSg(p, v) {
   var lv = v[n - 1]
   var ma = p.slice(-5).reduce(function(a, b) { return a + b }, 0) / 5
 
-  if (m3 > 0.3 && m1 > 0 && p[n - 1] > ma) {
+  if (m3 > 1.0 && m1 > 0 && p[n - 1] > ma) {
     s.rc = 1; s.st = 1; s.sd = 1
     d.rc = '3月+' + m3.toFixed(2) + '%, 最新月+' + m1.toFixed(2) + '%'
+    d.st = '已进入回升阶段'
+    d.sd = '已进入回升阶段'
+  } else if (m3 > 0.5 && m1 > 0 && lv >= av * 0.6 && p[n - 1] > ma) {
+    s.rc = 1; s.st = 1; s.sd = 1
+    d.rc = '3月+' + m3.toFixed(2) + '%(弱), 量' + (lv / av * 100).toFixed(0) + '%'
     d.st = '已进入回升阶段'
     d.sd = '已进入回升阶段'
   } else if (Math.abs(m3) < 0.6 && Math.abs(m1) <= 0.4 && lv >= av * 0.7) {
@@ -106,7 +111,7 @@ function dSg(p, v) {
     d.st = '波动' + Math.abs(m1).toFixed(2) + '%, 3月' + m3.toFixed(2) + '%'
     d.sd = '已走平'
     var r = []
-    if (m3 <= 0.3) r.push('3月涨幅不足(' + m3.toFixed(2) + '%)')
+    if (m3 <= 0.5) r.push('3月涨幅不足(' + m3.toFixed(2) + '%)')
     if (m1 <= 0) r.push('最新月未正涨')
     if (p[n - 1] <= ma) r.push('价<MA5')
     d.rc = r.length ? r.join('·') : '接近回升'
