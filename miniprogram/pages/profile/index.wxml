@@ -83,11 +83,11 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">信号灯体系</text>
-      <text class="fs11 text-muted">止跌：近3月跌幅收窄至-1%以内且月环比转正；走平：连续2月环比波动在±0.5%以内；回升：近3月累计涨幅>1%且成交量同比正增长。信号逐级递进，覆盖城市整体、物业类型、板块等多个维度</text>
+      <text class="fs11 text-muted">止跌：动量转正或最新月环比非负；走平：月波动≤0.5%且成交量维持；回升：近3月累计正涨+连续2月正涨+量价配合+价格站上MA5。三灯累进：回升自动包含走平和止跌，覆盖城市整体、物业类型、板块等多个维度</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">mktJudge综合判断</text>
-      <text class="fs11 text-muted">融合信号灯+量价诊断+趋势强度，输出12种市场状态和置信度</text>
+      <text class="fs11 text-muted">独立于信号灯，基于方向(3月涨跌幅)+持续性(连涨/跌月数)+量能(成交量比)+动量(加速/减速)四维综合评估。上行类：趋势性回暖/稳步上行/温和回升/上行放缓/缩量上涨/超跌反弹；盘整类：止稳向好/底部盘整/高位整理/窄幅震荡/止跌反弹；下行类：跌幅收窄/持续下行/加速下行。共13种状态+5级置信度</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">量价诊断</text>

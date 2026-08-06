@@ -87,39 +87,40 @@ function cRS(p, all, natPrices) {
 
 function dSg(p, v) {
   var n = p.length, s = { sd: 0, st: 0, rc: 0 }, d = { sd: '', st: '', rc: '' }
-  if (n >= 4) {
-    var c1 = (p[n - 3] - p[n - 4]) / p[n - 4] * 100
-    var c2 = (p[n - 2] - p[n - 3]) / p[n - 3] * 100
-    var c3 = (p[n - 1] - p[n - 2]) / p[n - 2] * 100
-    if (c3 > c2 && c2 > c1) { s.sd = 1; d.sd = '跌幅连续收窄: ' + c1.toFixed(2) + '%→' + c2.toFixed(2) + '%→' + c3.toFixed(2) + '%' }
-    else if (c3 > c2) { d.sd = '部分收窄: ' + c2.toFixed(2) + '%→' + c3.toFixed(2) + '%' }
-    else { d.sd = '未收窄: ' + c2.toFixed(2) + '%→' + c3.toFixed(2) + '%' }
-  }
-  if (n >= 2) {
-    var lc = Math.abs((p[n - 1] - p[n - 2]) / p[n - 2] * 100)
-    var av = v.slice(-7, -1).reduce(function(a, b) { return a + b }, 0) / Math.max(1, v.slice(-7, -1).length)
-    var lv = v[n - 1]
-    if (s.sd && lc <= 0.3 && lv >= av * 0.8) {
-      s.st = 1; d.st = '波动仅' + lc.toFixed(2) + '%, 量维持' + (lv / av * 100).toFixed(0) + '%'
-    } else {
-      d.st = '波动' + lc.toFixed(2) + '%' + (lc > 0.3 ? '(>0.3%)' : '') + ', 量' + (lv / (av || 1) * 100).toFixed(0) + '%' + (!s.sd ? ' [需先止跌]' : '')
-    }
-  }
-  if (n >= 3) {
-    var cl = (p[n - 1] - p[n - 2]) / p[n - 2] * 100
-    var cp2 = (p[n - 2] - p[n - 3]) / p[n - 3] * 100
-    var av2 = v.slice(-7, -1).reduce(function(a, b) { return a + b }, 0) / Math.max(1, v.slice(-7, -1).length)
-    var ma = p.slice(-5).reduce(function(a, b) { return a + b }, 0) / 5
-    if (s.st && cl > 0 && cp2 > 0 && v[n - 1] > av2 && p[n - 1] > ma) {
-      s.rc = 1; d.rc = '连涨2月 ' + cp2.toFixed(2) + '%/' + cl.toFixed(2) + '%, 量价齐升'
-    } else {
-      var r = []
-      if (!s.st) r.push('需先走平')
-      if (cl <= 0 || cp2 <= 0) r.push('未连续正涨')
-      if (v[n - 1] <= av2) r.push('量不足')
-      if (p[n - 1] <= ma) r.push('价<MA5')
-      d.rc = r.join('·')
-    }
+  if (n < 4) return { s: s, d: d }
+
+  var m1 = (p[n - 1] - p[n - 2]) / p[n - 2] * 100
+  var m3 = (p[n - 1] - p[n - 4]) / p[n - 4] * 100
+  var cp2 = (p[n - 2] - p[n - 3]) / p[n - 3] * 100
+  var mo = n >= 7 ? cSl(p, n - 4, n - 1) - cSl(p, n - 7, n - 4) : 0
+  var av = v.slice(-7, -1).reduce(function(a, b) { return a + b }, 0) / Math.max(1, v.slice(-7, -1).length)
+  var lv = v[n - 1]
+  var ma = p.slice(-5).reduce(function(a, b) { return a + b }, 0) / 5
+
+  if (m3 > 0 && m1 > 0 && cp2 > 0 && lv >= av * 0.75 && p[n - 1] > ma) {
+    s.rc = 1; s.st = 1; s.sd = 1
+    d.rc = '连涨2月 ' + cp2.toFixed(2) + '%/' + m1.toFixed(2) + '%, 3月+' + m3.toFixed(2) + '%'
+    d.st = '已进入回升阶段'
+    d.sd = '已进入回升阶段'
+  } else if (Math.abs(m3) < 0.6 && Math.abs(m1) <= 0.4 && lv >= av * 0.7) {
+    s.st = 1; s.sd = 1
+    d.st = '波动' + Math.abs(m1).toFixed(2) + '%, 3月' + m3.toFixed(2) + '%'
+    d.sd = '已走平'
+    var r = []
+    if (m3 <= 0) r.push('3月未转正(' + m3.toFixed(2) + '%)')
+    if (m1 <= 0 || cp2 <= 0) r.push('未连续正涨')
+    if (lv < av * 0.75) r.push('量偏弱')
+    if (p[n - 1] <= ma) r.push('价<MA5')
+    d.rc = r.length ? r.join('·') : '接近回升'
+  } else if (mo > 0 || m1 >= 0) {
+    s.sd = 1
+    d.sd = mo > 0 ? '动量转正(+' + mo.toFixed(2) + '%)' : '最新月' + m1.toFixed(2) + '%'
+    d.st = Math.abs(m3) >= 1.0 ? '3月跌幅' + m3.toFixed(2) + '%(未企稳)' : '量不足(' + (lv / av * 100).toFixed(0) + '%)'
+    d.rc = '需先走平'
+  } else {
+    d.sd = '仍下跌(月' + m1.toFixed(2) + '%, 动量' + mo.toFixed(2) + '%)'
+    d.st = '需先止跌'
+    d.rc = '需先走平'
   }
   return { s: s, d: d }
 }

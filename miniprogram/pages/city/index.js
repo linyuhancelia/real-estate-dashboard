@@ -127,11 +127,14 @@ Page({
     var rcPct = tt ? (rcC / tt * 100).toFixed(0) : 0
     var stPct = tt ? (stC / tt * 100).toFixed(0) : 0
     var sdPct = tt ? (onC / tt * 100).toFixed(0) : 0
-    var verdict = rcPct > 30 ? '回暖信号广泛，转折信心较强' :
+    var anySignal = tt ? ((onC + stC + rcC) / tt * 100).toFixed(0) : 0
+    var verdict = rcPct > 30 ? '回暖信号广泛，上行趋势确立' :
+      rcPct > 10 ? '部分市场回升，结构性回暖' :
       stPct > 40 ? '多数走平，等待方向选择' :
       sdPct > 40 ? '止跌信号初现，尚需确认' :
-      '下行通道未改，建议继续观望'
-    var cls = rcPct > 30 ? 'tp' : stPct > 40 ? 'tn' : sdPct > 40 ? 'tn' : 'tng'
+      anySignal > 30 ? '改善迹象出现，关注持续性' :
+      '多数仍在调整，建议继续观望'
+    var cls = rcPct > 30 ? 'tp' : rcPct > 10 ? 'tp' : stPct > 40 ? 'tn' : sdPct > 40 ? 'tn' : 'tng'
 
     this.setData({
       signalTargets: signalTargets.filter(function(t) {
@@ -427,11 +430,14 @@ Page({
     var rcPct = tt ? (rcC / tt * 100).toFixed(0) : 0
     var stPct = tt ? (stC / tt * 100).toFixed(0) : 0
     var sdPct = tt ? (onC / tt * 100).toFixed(0) : 0
-    var verdict = rcPct > 30 ? '回暖信号广泛，转折信心较强' :
+    var anySignal = tt ? ((onC + stC + rcC) / tt * 100).toFixed(0) : 0
+    var verdict = rcPct > 30 ? '回暖信号广泛，上行趋势确立' :
+      rcPct > 10 ? '部分市场回升，结构性回暖' :
       stPct > 40 ? '多数走平，等待方向选择' :
       sdPct > 40 ? '止跌信号初现，尚需确认' :
-      '下行通道未改，建议继续观望'
-    var cls = rcPct > 30 ? 'tp' : stPct > 40 ? 'tn' : sdPct > 40 ? 'tn' : 'tng'
+      anySignal > 30 ? '改善迹象出现，关注持续性' :
+      '多数仍在调整，建议继续观望'
+    var cls = rcPct > 30 ? 'tp' : rcPct > 10 ? 'tp' : stPct > 40 ? 'tn' : sdPct > 40 ? 'tn' : 'tng'
     this.setData({ sigSummary: { text: text, verdict: verdict, cls: cls } })
   },
 
