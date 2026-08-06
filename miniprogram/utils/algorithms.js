@@ -91,15 +91,14 @@ function dSg(p, v) {
 
   var m1 = (p[n - 1] - p[n - 2]) / p[n - 2] * 100
   var m3 = (p[n - 1] - p[n - 4]) / p[n - 4] * 100
-  var cp2 = (p[n - 2] - p[n - 3]) / p[n - 3] * 100
   var mo = n >= 7 ? cSl(p, n - 4, n - 1) - cSl(p, n - 7, n - 4) : 0
   var av = v.slice(-7, -1).reduce(function(a, b) { return a + b }, 0) / Math.max(1, v.slice(-7, -1).length)
   var lv = v[n - 1]
   var ma = p.slice(-5).reduce(function(a, b) { return a + b }, 0) / 5
 
-  if (m3 > 0 && m1 > 0 && cp2 > 0 && lv >= av * 0.75 && p[n - 1] > ma) {
+  if (m3 > 0.3 && m1 > 0 && p[n - 1] > ma) {
     s.rc = 1; s.st = 1; s.sd = 1
-    d.rc = '连涨2月 ' + cp2.toFixed(2) + '%/' + m1.toFixed(2) + '%, 3月+' + m3.toFixed(2) + '%'
+    d.rc = '3月+' + m3.toFixed(2) + '%, 最新月+' + m1.toFixed(2) + '%'
     d.st = '已进入回升阶段'
     d.sd = '已进入回升阶段'
   } else if (Math.abs(m3) < 0.6 && Math.abs(m1) <= 0.4 && lv >= av * 0.7) {
@@ -107,9 +106,8 @@ function dSg(p, v) {
     d.st = '波动' + Math.abs(m1).toFixed(2) + '%, 3月' + m3.toFixed(2) + '%'
     d.sd = '已走平'
     var r = []
-    if (m3 <= 0) r.push('3月未转正(' + m3.toFixed(2) + '%)')
-    if (m1 <= 0 || cp2 <= 0) r.push('未连续正涨')
-    if (lv < av * 0.75) r.push('量偏弱')
+    if (m3 <= 0.3) r.push('3月涨幅不足(' + m3.toFixed(2) + '%)')
+    if (m1 <= 0) r.push('最新月未正涨')
     if (p[n - 1] <= ma) r.push('价<MA5')
     d.rc = r.length ? r.join('·') : '接近回升'
   } else if (mo > 0 || m1 >= 0) {

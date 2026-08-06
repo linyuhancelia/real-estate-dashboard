@@ -83,7 +83,7 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">信号灯体系</text>
-      <text class="fs11 text-muted">止跌：动量转正或最新月环比非负；走平：月波动≤0.5%且成交量维持；回升：近3月累计正涨+连续2月正涨+量价配合+价格站上MA5。三灯累进：回升自动包含走平和止跌，覆盖城市整体、物业类型、板块等多个维度</text>
+      <text class="fs11 text-muted">止跌：动量转正或最新月环比非负；走平：近3月波动±0.6%以内、最新月±0.4%以内、且成交量维持7成以上；回升：近3月累计涨幅>0.3%且最新月正涨且价格站上MA5。三灯独立判定但自动累进：回升包含走平和止跌。覆盖城市整体、物业类型、板块等多个维度</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">mktJudge综合判断</text>
