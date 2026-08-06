@@ -55,7 +55,7 @@
     </view>
     <view class="info-row">
       <text class="text-muted fs12">数据来源</text>
-      <text class="fs12">安居客+房价行情+房天下</text>
+      <text class="fs12">NBS 70城指数+安居客+房价行情+房天下</text>
     </view>
     <view class="info-row">
       <text class="text-muted fs12">更新频率</text>
@@ -83,7 +83,7 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">信号灯体系</text>
-      <text class="fs11 text-muted">止跌：动量转正或最新月环比非负；走平：近3月波动±0.6%以内、最新月±0.4%以内、且成交量维持7成以上；回升：近3月累计涨幅>0.3%且最新月正涨且价格站上MA5。三灯独立判定但自动累进：回升包含走平和止跌。覆盖城市整体、物业类型、板块等多个维度</text>
+      <text class="fs11 text-muted">止跌：动量转正或最新月环比非负；走平：近3月波动±0.6%以内、最新月±0.4%以内、成交量维持7成以上；回升(强)：近3月累计>1.0%且最新月正涨且价>MA5；回升(弱)：近3月>0.5%且最新月正涨且量≥6成且价>MA5。三灯独立判定但自动累进：回升包含走平和止跌。覆盖城市整体、物业类型、板块等多维度</text>
     </view>
     <view class="method-item">
       <text class="fw600 fs12">mktJudge综合判断</text>
@@ -99,7 +99,7 @@
     </view>
     <view class="method-item">
       <text class="fw600 fs12">数据说明</text>
-      <text class="fs11 text-muted">三源融合采用链式指数法：各源独立计算环比→加权中位数共识→锚定首源链式累乘。源质量过滤自动排除波动标准差>5%或单月跳变>8%的异常源。全国均价在数据源切换月份做4个月斜率渐变平滑。每周日自动更新。所有分析仅供参考，不构成投资建议</text>
+      <text class="fs11 text-muted">四源融合体系：NBS 70城二手住宅价格指数(国家统计局网签成交数据)作为校准基准，覆盖2024/08至今，修正挂牌价的滞后偏差；安居客+房价行情+房天下三源采用链式指数法融合(各源独立环比→加权中位数共识→锚定首源累乘)。源质量过滤自动排除波动标准差>5%或单月跳变>8%的异常源。NBS为领先指标(反映实际成交)，三源为滞后指标(反映挂牌报价)，两者结合能更早捕捉市场拐点。每周日自动更新。所有分析仅供参考，不构成投资建议</text>
     </view>
   </view>
 
@@ -112,7 +112,7 @@
   </view>
 
   <view class="footer">
-    <text class="text-muted fs10">楼市右侧信号 v1.0 · 三源交叉·结论解读·每周更新</text>
+    <text class="text-muted fs10">楼市右侧信号 v1.0 · NBS校准·四源融合·结论解读·每周更新</text>
   </view>
 </view>
 
